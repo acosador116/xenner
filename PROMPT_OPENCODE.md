@@ -48,10 +48,14 @@ Rama `main`, remoto `origin` (github.com/xenoxf/xenner.git), al día.
 - `d021813` — `xenner: espacio de trabajo IA + spec de skins` (incluye
   `AGENTS.md`, `xenner/docs/SKIN_SPEC.md`, `xenner/skins/` con `config.txt` +
   skins de ejemplo `glass-default/` y `webcore/`, y la plantilla base Tauri+Solid).
+- `ed21fb2` — `xenner: backend de skins en Rust` (incluye `skin.rs` con los
+  comandos `scan_skins`/`read_skin_file`/`read_config`, registro en `lib.rs`,
+  ventana `1000x680` + `"transparent": true` y `bundle.resources` en
+  `tauri.conf.json`, más lockfiles). Working tree limpio.
 
-**Cambios SIN commitear (ya están en el working tree, revísalos con `git diff`):**
+**Backend Rust (detalle de lo ya commiteado en `ed21fb2`, ver con `git show`):**
 
-- `xenner/src-tauri/src/skin.rs` (NUEVO): comandos Tauri `scan_skins`
+- `xenner/src-tauri/src/skin.rs`: comandos Tauri `scan_skins`
   (devuelve `[]` si falla, nunca cuelga), `read_skin_file` (con allowlist de
   componentes y validación anti path-traversal) y `read_config` (devuelve `""`
   si falta). Incluye `skins_dir()` que prueba resource_dir → junto al exe →
@@ -59,8 +63,7 @@ Rama `main`, remoto `origin` (github.com/xenoxf/xenner.git), al día.
 - `xenner/src-tauri/src/lib.rs`: registra `mod skin` y los 3 comandos.
 - `xenner/src-tauri/tauri.conf.json`: ventana `1000x680` + `"transparent": true`
   y `bundle.resources: ["../skins"]`.
-- Untracked preexistentes (NO los creé yo; decide si commitearlos):
-  `xenner/pnpm-lock.yaml`, `xenner/pnpm-workspace.yaml`,
+- Lockfiles versionados: `xenner/pnpm-lock.yaml`, `xenner/pnpm-workspace.yaml`,
   `xenner/src-tauri/Cargo.lock`.
 
 **Lo que FALTA (tu trabajo, sección 5).**
@@ -91,16 +94,17 @@ en `:root`.
 
 ## 5. Plan de tareas (en este orden, commit+push tras CADA una)
 
-### Tarea A — Consolidar lo pendiente del backend Rust
+### Tarea A — Verificar el backend Rust (ya commiteado en `ed21fb2`)
 
-1. Lee `git diff` y `xenner/src-tauri/src/skin.rs`.
+1. Lee `xenner/src-tauri/src/skin.rs` y `git show ed21fb2 --stat`.
 2. Verifica: `cd xenner/src-tauri && cargo check` (⚠️ ver sección 6, problema
    de disco: comprueba `df -h /` antes; si hay < 3 GB libres, NO lo ejecutes y
    verifica con `rustc --edition 2021` la lógica pura o con `cargo check`
    tras liberar espacio borrando `xenner/src-tauri/target/` — está en
    `.gitignore`, es seguro borrarlo).
-3. Si compila (o la lógica es correcta y solo falta disco), commit + push:
-   `xenner: backend de skins en Rust — scan_skins, lectura TXT y ventana transparente`.
+3. Si compila sin cambios, no hay nada que commitear (prohibidos los commits
+   vacíos): continúa con la Tarea B. Si hay que corregir algo, commit + push:
+   `xenner: backend de skins en Rust — <corrección>`.
 
 ### Tarea B — SkinEngine del frontend + default glassmorphism embebida
 
