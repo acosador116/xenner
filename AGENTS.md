@@ -65,5 +65,5 @@ cd xenner
 pnpm install        # dependencias frontend
 pnpm dev            # vite dev (http://localhost:1420)
 pnpm build          # verificación frontend
-cargo check -p xenner_lib  # verificación Rust (desde xenner/src-tauri)
+cargo check         # verificación Rust (desde xenner/src-tauri; el paquete es `xenner`, NO `-p xenner_lib`)
 ```
