@@ -202,6 +202,13 @@
   line-height: 1.6;
 }
 
+.footnote {
+  margin: 10px 0 0;
+  color: var(--skin-sidebar-textDim);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
 .card {
   border: var(--skin-input-border);
   border-radius: calc(var(--skin-note-radius) * 0.7);
@@ -277,10 +284,6 @@
   border-color: var(--skin-input-focus);
   outline: 2px solid var(--skin-input-focus);
   outline-offset: 1px;
-}
-
-.select {
-  width: min(220px, 46vw);
 }
 
 .range {

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { DEFAULT_SKIN_DRAFT } from "../data/skin.ts";
-import { buildSkinComponents, buildSkinPreviewStyle, slugifySkinId } from "./creator.ts";
+import { buildSkinComponents, buildSkinPreviewStyle, resolveFontStack, slugifySkinId } from "./creator.ts";
 
 test("convierte el nombre de una skin en un identificador portable", () => {
   assert.equal(slugifySkinId("Mi skin bonita"), "mi-skin-bonita");
@@ -47,4 +47,20 @@ test("el creador cae en valores seguros si recibe colores inválidos", () => {
   });
   assert.equal(components.background.accent, DEFAULT_SKIN_DRAFT.accent);
   assert.equal(components.background.background, DEFAULT_SKIN_DRAFT.background);
+});
+
+test("entiende la tipografía como pila nueva y como identificador antiguo", () => {
+  // Pila nueva: se respeta tal cual.
+  assert.equal(resolveFontStack('Georgia, "Noto Serif", serif'), 'Georgia, "Noto Serif", serif');
+  assert.equal(buildSkinComponents({ ...DEFAULT_SKIN_DRAFT, font: "Verdana" }).button.font, "Verdana");
+
+  // Identificadores cortos de los temas antiguos: siguen funcionando.
+  assert.equal(resolveFontStack("mono"), "ui-monospace, SFMono-Regular, Menlo, monospace");
+  assert.equal(resolveFontStack("serif"), 'Georgia, "Noto Serif", serif');
+  assert.equal(buildSkinComponents({ ...DEFAULT_SKIN_DRAFT, font: "serif" }).toolbar.font, 'Georgia, "Noto Serif", serif');
+
+  // Cualquier cosa que pueda romper CSS cae en la de sistema.
+  assert.equal(resolveFontStack("serif; color: red"), "system-ui, sans-serif");
+  assert.equal(resolveFontStack(""), "system-ui, sans-serif");
+  assert.equal(resolveFontStack("url(https://example.invalid)"), "system-ui, sans-serif");
 });

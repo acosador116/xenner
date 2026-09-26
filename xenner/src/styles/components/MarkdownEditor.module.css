@@ -198,17 +198,18 @@
 }
 
 /*
- * La barra flotante salta a los 20 ms de seleccionar y tapa el texto que se
- * está escribiendo. Se queda montada pero transparente —así sigue siendo
- * alcanzable con el puntero y con el Tab— y solo se revela al pasar el ratón
- * por encima o al recibir el foco con el teclado.
+ * La barra flotante de formato de Crepe sale a los 20 ms de seleccionar y tapa
+ * el texto que se está escribiendo. `data-toolbar` lo pone el editor cuando el
+ * puntero pasa por encima del texto seleccionado o de la propia barra, así que
+ * solo se revela cuando el hover está activo de verdad. Se queda montada para
+ * que siga siendo alcanzable con el puntero y con el Tab.
  */
 .editor :global(.milkdown-toolbar[data-show="true"]) {
   opacity: 0;
   transition: opacity var(--motion-standard) ease;
 }
 
-.editor :global(.milkdown-toolbar[data-show="true"]:hover),
+.editor[data-toolbar="on"] :global(.milkdown-toolbar[data-show="true"]),
 .editor :global(.milkdown-toolbar[data-show="true"]:focus-within) {
   opacity: 1;
 }

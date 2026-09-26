@@ -1,0 +1,18 @@
+.select {
+  width: min(230px, 44vw);
+  min-height: 34px;
+  padding: 6px 10px;
+  color: var(--skin-input-text);
+  background-color: var(--skin-input-background);
+  border: var(--skin-input-border);
+  border-radius: var(--skin-input-radius);
+  box-shadow: var(--skin-input-shadow);
+  font: inherit;
+  font-size: 13px;
+}
+
+.select:focus {
+  border-color: var(--skin-input-focus);
+  outline: 2px solid var(--skin-input-focus);
+  outline-offset: 1px;
+}

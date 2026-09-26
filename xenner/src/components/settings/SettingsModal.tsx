@@ -1,11 +1,12 @@
 import { createSignal, For, onMount, Show } from "solid-js";
 
-import { DEFAULT_APPEARANCE, FONT_OPTIONS, isDefaultAppearance } from "../../data/appearance";
+import { DEFAULT_APPEARANCE, isDefaultAppearance } from "../../data/appearance";
 import { SETTINGS_SECTIONS, THEME_MODES, type SettingsNavigationItem, type SettingsSection } from "../../data/settings";
 import styles from "../../styles/components/SettingsModal.module.css";
 import type { Appearance } from "../../types/appearance";
 import type { SkinInfo } from "../../types/skin";
 import { CheckIcon, CloseIcon, InfoIcon } from "../ui/Icons";
+import { FontSelect } from "./FontSelect";
 import { IconButton } from "../ui/IconButton";
 import { ModalBackdrop } from "../ui/ModalBackdrop";
 import { SkinCreator } from "./SkinCreator";
@@ -206,6 +207,10 @@ export function SettingsModal(props: SettingsModalProps) {
                     La de la interfaz afecta a botones y menús; la del editor, al texto de tus
                     notas.
                   </p>
+                  <p class={styles.footnote}>
+                    Xenner no descarga tipografías: se aplican las que ya tengas instaladas en
+                    este equipo. Cada opción indica de qué se sustituye si falta.
+                  </p>
                   <div class={styles.card}>
                     <div class={styles.row}>
                       <label class={styles.rowLabel} for="ui-font">
@@ -213,25 +218,13 @@ export function SettingsModal(props: SettingsModalProps) {
                         <small>Botones, menús y barras</small>
                       </label>
                       <div class={styles.rowControl}>
-                        <select
+                        <FontSelect
                           id="ui-font"
-                          class={`${styles.input} ${styles.select}`}
                           value={props.appearance.uiFont}
-                          onChange={(event) =>
-                            props.onAppearanceChange({
-                              ...props.appearance,
-                              uiFont: event.currentTarget.value,
-                            })
+                          onChange={(uiFont) =>
+                            props.onAppearanceChange({ ...props.appearance, uiFont })
                           }
-                        >
-                          <For each={FONT_OPTIONS}>
-                            {(font) => (
-                              <option value={font.value} style={`font-family: ${font.value}`}>
-                                {font.label}
-                              </option>
-                            )}
-                          </For>
-                        </select>
+                        />
                       </div>
                     </div>
                     <div class={styles.row}>
@@ -240,25 +233,13 @@ export function SettingsModal(props: SettingsModalProps) {
                         <small>El texto de tus notas</small>
                       </label>
                       <div class={styles.rowControl}>
-                        <select
+                        <FontSelect
                           id="editor-font"
-                          class={`${styles.input} ${styles.select}`}
                           value={props.appearance.editorFont}
-                          onChange={(event) =>
-                            props.onAppearanceChange({
-                              ...props.appearance,
-                              editorFont: event.currentTarget.value,
-                            })
+                          onChange={(editorFont) =>
+                            props.onAppearanceChange({ ...props.appearance, editorFont })
                           }
-                        >
-                          <For each={FONT_OPTIONS}>
-                            {(font) => (
-                              <option value={font.value} style={`font-family: ${font.value}`}>
-                                {font.label}
-                              </option>
-                            )}
-                          </For>
-                        </select>
+                        />
                       </div>
                     </div>
                   </div>

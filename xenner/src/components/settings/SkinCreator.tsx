@@ -3,7 +3,6 @@ import { createSignal, For, Show } from "solid-js";
 import {
   DEFAULT_SKIN_DRAFT,
   SKIN_COLOR_FIELDS,
-  SKIN_FONT_OPTIONS,
   SKIN_PALETTES,
   SKIN_PRESETS,
   SKIN_SHADOW_OPTIONS,
@@ -12,6 +11,7 @@ import { buildSkinPreviewStyle, createUserSkin } from "../../skin/creator";
 import styles from "../../styles/components/SkinCreator.module.css";
 import type { SkinDraft, SkinInfo } from "../../types/skin";
 import { Button } from "../ui/Button";
+import { FontSelect } from "./FontSelect";
 
 interface SkinCreatorProps {
   onCreated(skin: SkinInfo): void;
@@ -213,22 +213,11 @@ export function SkinCreator(props: SkinCreatorProps) {
           </label>
           <label class={styles.selectControl} for="skin-font">
             <span>Tipografía de la interfaz</span>
-            <select
+            <FontSelect
               id="skin-font"
               value={draft().font}
-              onChange={(event) => update("font", event.currentTarget.value)}
-            >
-              <For each={SKIN_FONT_OPTIONS}>
-                {(option) => (
-                  <option
-                    value={option.value}
-                    style={option.font ? `font-family: ${option.font}` : undefined}
-                  >
-                    {option.label}
-                  </option>
-                )}
-              </For>
-            </select>
+              onChange={(font) => update("font", font)}
+            />
           </label>
         </div>
       </section>

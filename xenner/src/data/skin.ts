@@ -1,5 +1,9 @@
 import type { ColorScheme } from "../types/appearance";
+import { FONT_OPTIONS } from "./appearance.ts";
 import type { SkinColorKey, SkinDraft, SkinPalette, SkinPreset, SkinShadow } from "../types/skin";
+
+/** La pila de la tipografía de sistema: valor por defecto de cualquier tema. */
+export const DEFAULT_FONT_VALUE = FONT_OPTIONS[0].value;
 
 export const SKIN_PALETTES: Record<ColorScheme, SkinPalette> = {
   dark: {
@@ -34,7 +38,7 @@ export const DEFAULT_SKIN_DRAFT: SkinDraft = {
   blur: 0,
   borderWidth: 1,
   shadow: "soft",
-  font: "system",
+  font: DEFAULT_FONT_VALUE,
 };
 
 /**
@@ -58,14 +62,6 @@ export const SKIN_SHADOW_OPTIONS: readonly { value: SkinShadow; label: string }[
   { value: "none", label: "Sin sombra" },
   { value: "soft", label: "Suave" },
   { value: "strong", label: "Marcada" },
-];
-
-export const SKIN_FONT_OPTIONS: readonly { value: string; label: string; font: string }[] = [
-  { value: "system", label: "Sistema", font: "" },
-  { value: "serif", label: "Serif", font: "Georgia, serif" },
-  { value: "mono", label: "Monoespaciada", font: "ui-monospace, Menlo, monospace" },
-  { value: "rounded", label: "Redondeada", font: 'ui-rounded, "SF Pro Rounded", sans-serif' },
-  { value: "display", label: "Display", font: '"Trebuchet MS", sans-serif' },
 ];
 
 export const SKIN_PRESETS: readonly SkinPreset[] = [
