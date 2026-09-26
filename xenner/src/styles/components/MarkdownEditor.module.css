@@ -95,6 +95,33 @@
   line-height: var(--skin-editor-line-height, 1.7);
 }
 
+/* Red de seguridad: una URL larguísima o una palabra sin espacios no puede
+   ensanchar la columna de lectura. */
+.editor :global(.ProseMirror p),
+.editor :global(.ProseMirror li),
+.editor :global(.ProseMirror td),
+.editor :global(.ProseMirror th) {
+  overflow-wrap: anywhere;
+}
+
+/*
+ * LaTeX: KaTeX es `white-space: nowrap`, así que una fórmula larga se salía de
+ * la columna y rompía el ancho de la nota. inline-block + overflow lo convierte
+ * en un contenedor desplazable DENTRO de la columna en vez de desbordarla.
+ */
+.editor :global(.ProseMirror span[data-type="math_inline"]) {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  vertical-align: bottom;
+}
+
+.editor :global(.ProseMirror .katex-display) {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
 .editor :global(.ProseMirror a) {
   color: var(--skin-note-accent);
   text-decoration: underline;
@@ -168,6 +195,22 @@
   color: var(--skin-toolbar-text);
   background-color: var(--skin-toolbar-background);
   border: var(--skin-toolbar-border);
+}
+
+/*
+ * La barra flotante salta a los 20 ms de seleccionar y tapa el texto que se
+ * está escribiendo. Se queda montada pero transparente —así sigue siendo
+ * alcanzable con el puntero y con el Tab— y solo se revela al pasar el ratón
+ * por encima o al recibir el foco con el teclado.
+ */
+.editor :global(.milkdown-toolbar[data-show="true"]) {
+  opacity: 0;
+  transition: opacity var(--motion-standard) ease;
+}
+
+.editor :global(.milkdown-toolbar[data-show="true"]:hover),
+.editor :global(.milkdown-toolbar[data-show="true"]:focus-within) {
+  opacity: 1;
 }
 
 .editor :global(.toolbar-item:hover),

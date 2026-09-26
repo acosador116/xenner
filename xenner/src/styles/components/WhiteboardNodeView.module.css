@@ -10,9 +10,16 @@
   margin-block: 0;
 }
 
-.node.ProseMirror-selectednode .preview {
+.node.ProseMirror-selectednode .preview,
+.node.active .preview {
   outline: 2px solid var(--skin-note-accent);
   outline-offset: 3px;
+  border-radius: calc(var(--skin-note-radius) * 0.35);
+}
+
+/* El clic marca el dibujo activo; abrir el lienzo lo desmarca. */
+.node.active .preview {
+  cursor: pointer;
 }
 
 .node.dragging .preview {

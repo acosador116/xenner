@@ -33,7 +33,7 @@
   font-size: 16px;
 }
 .dir {
-  color:var(--skin-note-text);
+  color:var(--skin-button-text);
   font-weight: 500;
   font-size: 16px;
 }
@@ -45,10 +45,8 @@
   width: min(var(--skin-content-width, 860px), 100%);
   min-height: 100%;
   margin-inline: auto;
-  margin-top: 20px;
-  padding: 10px 54px 132px;
+  padding: clamp(42px, 6vw, 72px) 54px 132px;
   text-align: left;
-  border: var(--skin-note-border);
 }
 
 .heading {

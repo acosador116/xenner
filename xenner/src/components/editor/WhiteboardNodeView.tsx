@@ -89,6 +89,11 @@ class WhiteboardNodeView implements NodeView {
       event.preventDefault();
       queueMicrotask(() => void this.startEditing());
     });
+    // Un clic no abre la pizarra (eso es doble clic), pero sí tiene que decir
+    // qué dibujo está activo, igual que cualquier otro elemento seleccionable.
+    this.preview.addEventListener("click", () => this.setActive(true));
+    this.preview.addEventListener("focus", () => this.setActive(true));
+    this.preview.addEventListener("blur", () => this.setActive(false));
     this.preview.addEventListener("keydown", (event) => {
       if (event.key !== "Enter" && event.key !== " ") return;
       event.preventDefault();
@@ -122,10 +127,17 @@ class WhiteboardNodeView implements NodeView {
 
   selectNode(): void {
     this.dom.classList.add("ProseMirror-selectednode");
+    this.setActive(true);
   }
 
   deselectNode(): void {
     this.dom.classList.remove("ProseMirror-selectednode");
+    this.setActive(false);
+  }
+
+  /** Marca el dibujo como activo para que se vea qué se va a editar. */
+  private setActive(active: boolean): void {
+    this.dom.classList.toggle(styles.active, active);
   }
 
   stopEvent(event: Event): boolean {
@@ -199,6 +211,7 @@ class WhiteboardNodeView implements NodeView {
     // `starting` ya cuenta para syncVisibility, pero lo aplicamos ya para que el
     // lienzo nunca llegue a coexistir un frame con la vista previa del dibujo.
     this.preview.hidden = true;
+    this.setActive(false);
     this.dom.classList.remove("ProseMirror-selectednode");
     try {
       const active = getActiveWhiteboard();

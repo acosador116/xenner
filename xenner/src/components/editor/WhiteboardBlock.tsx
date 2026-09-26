@@ -140,6 +140,22 @@ interface DrawingSnapshot {
   paper: ShapeBounds;
 }
 
+/**
+ * Punto del rastro del puntero, en fracción 0..1 de la zona visible del
+ * lienzo. En fracción para que sobreviva al zoom y al paneo sin recalcular.
+ */
+interface TrailPoint {
+  x: number;
+  y: number;
+}
+
+/** Puntos máximos del rastro: es una ayuda visual, no un registro. */
+const TRAIL_MAX_POINTS = 160;
+/** Separación mínima en fracción para no muestrear un punto por pixel. */
+const TRAIL_MIN_STEP = 0.004;
+/** Tiempo que el rastro sigue visible desvanaciéndose tras soltar. */
+const TRAIL_FADE_MS = 420;
+
 function defaultDrawingColor(): string {
   if (typeof document === "undefined") return DEFAULT_DRAWING_COLOR;
   const value = getComputedStyle(document.documentElement)
@@ -238,6 +254,8 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
   const [resize, setResize] = createSignal<ResizeState | null>(null);
   const [pan, setPan] = createSignal<PanState | null>(null);
   const [paperDrag, setPaperDrag] = createSignal<PaperDragState | null>(null);
+  const [trail, setTrail] = createSignal<TrailPoint[]>([]);
+  const [trailFading, setTrailFading] = createSignal(false);
   const [undoStack, setUndoStack] = createSignal<DrawingSnapshot[]>([]);
   const [redoStack, setRedoStack] = createSignal<DrawingSnapshot[]>([]);
   const [saving, setSaving] = createSignal(false);
@@ -259,9 +277,13 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
   let expandedCanvasObserver: ResizeObserver | null = null;
   let styleBefore: DrawingSnapshot | null = null;
   let textBefore: DrawingSnapshot | null = null;
+  let trailTimer: ReturnType<typeof setTimeout> | null = null;
 
   const selectedShape = createMemo(() => shapes().find((shape) => shape.id === selectedId()) ?? null);
   const zoomPercent = createMemo(() => Math.round((paper().width / view().width) * 100));
+  // Mientras se edita un texto, su <text> del SVG se oculta: el input queda
+  // encima y, si no, el mismo texto se veía dos veces superpuesto.
+  const editingTextId = createMemo(() => textEdit()?.id ?? null);
 
   function fitExpandedCanvas(): void {
     if (!expanded() || !canvasWrap || !canvasStage) return;
@@ -313,6 +335,7 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
     const move = (event: PointerEvent): void => {
       if (!paperDrag()) return;
       event.preventDefault();
+      recordTrail(event.clientX, event.clientY);
       resizePaperTo(event.clientX, event.clientY);
     };
     const end = (): void => finishPaperResize();
@@ -326,7 +349,62 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
     });
   });
 
-  onCleanup(() => expandedCanvasObserver?.disconnect());
+  onCleanup(() => {
+    expandedCanvasObserver?.disconnect();
+    if (trailTimer) clearTimeout(trailTimer);
+  });
+
+  // --- Rastro del puntero --------------------------------------------------
+  // Al arrastrar con el botón pulsado se dibuja la trayectoria recorrida: sin
+  // ella no hay forma de saber qué se está moviendo ni hacia dónde, que es lo
+  // que hace un escritorio. Es solo visual: nunca entra en el SVG ni en el undo.
+  function recordTrail(clientX: number, clientY: number): void {
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+    const point = {
+      x: (clientX - rect.left) / rect.width,
+      y: (clientY - rect.top) / rect.height,
+    };
+    setTrail((previous) => {
+      const last = previous[previous.length - 1];
+      if (last && Math.hypot(point.x - last.x, point.y - last.y) < TRAIL_MIN_STEP) {
+        return previous;
+      }
+      return [...previous.slice(-(TRAIL_MAX_POINTS - 1)), point];
+    });
+  }
+
+  function beginTrail(clientX: number, clientY: number): void {
+    if (trailTimer) {
+      clearTimeout(trailTimer);
+      trailTimer = null;
+    }
+    setTrailFading(false);
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+    setTrail([
+      {
+        x: (clientX - rect.left) / rect.width,
+        y: (clientY - rect.top) / rect.height,
+      },
+    ]);
+  }
+
+  function endTrail(): void {
+    if (trail().length < 2) {
+      setTrail([]);
+      return;
+    }
+    setTrailFading(true);
+    if (trailTimer) clearTimeout(trailTimer);
+    trailTimer = setTimeout(() => {
+      trailTimer = null;
+      setTrail([]);
+      setTrailFading(false);
+    }, TRAIL_FADE_MS);
+  }
 
   function capturePointer(event: PointerEvent): void {
     try {
@@ -413,6 +491,7 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
     event.preventDefault();
     event.stopPropagation();
     canvas?.focus({ preventScroll: true });
+    beginTrail(event.clientX, event.clientY);
     const point = pointFromEvent(event);
     const currentTool = tool();
     const resizeHandle = event.target instanceof Element
@@ -473,6 +552,7 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
     if (!pan() && !resize() && !drag() && !draft()) return;
     event.preventDefault();
     event.stopPropagation();
+    recordTrail(event.clientX, event.clientY);
     const activePan = pan();
     if (activePan) {
       const rect = canvas!.getBoundingClientRect();
@@ -535,6 +615,7 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
   function onPointerCancel(event: PointerEvent): void {
     event.preventDefault();
     event.stopPropagation();
+    endTrail();
     const activeResize = resize();
     if (activeResize) {
       applySnapshot(activeResize.before);
@@ -555,6 +636,7 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
       event.preventDefault();
       event.stopPropagation();
     }
+    endTrail();
     if (pan()) {
       releasePointer(event);
       setPan(null);
@@ -762,6 +844,7 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
       anchor: paper(),
       before: snapshot(),
     });
+    beginTrail(event.clientX, event.clientY);
     const handle = event.currentTarget;
     try {
       if (handle instanceof Element) (handle as HTMLElement).setPointerCapture?.(event.pointerId);
@@ -1060,7 +1143,7 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
                 {shape.kind === "line" && <line x1={shape.x1} y1={shape.y1} x2={shape.x2} y2={shape.y2} stroke={shape.color} stroke-width={shape.width} stroke-linecap="round" />}
                 {shape.kind === "arrow" && <line x1={shape.x1} y1={shape.y1} x2={shape.x2} y2={shape.y2} stroke={shape.color} stroke-width={shape.width} stroke-linecap="round" marker-end={`url(#${markerPrefix}-${shape.id})`} />}
                 {shape.kind === "path" && <polyline points={shape.points.map((point) => `${point.x},${point.y}`).join(" ")} fill="none" stroke={shape.color} stroke-width={shape.width} stroke-linecap="round" stroke-linejoin="round" />}
-                {shape.kind === "text" && <text x={shape.x1} y={shape.y1} fill={shape.color} font-family="sans-serif" font-size="24">{shape.text}</text>}
+                {shape.kind === "text" && shape.id !== editingTextId() && <text x={shape.x1} y={shape.y1} fill={shape.color} font-family="sans-serif" font-size="24">{shape.text}</text>}
               </>
             )}
           </For>
@@ -1108,6 +1191,19 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
             }}
           </For>
           </svg>
+          <Show when={trail().length > 1}>
+            <svg
+              class={`${styles.trail} ${trailFading() ? styles.trailFading : ""}`}
+              viewBox="0 0 1 1"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <polyline
+                class={styles.trailLine}
+                points={trail().map((point) => `${point.x},${point.y}`).join(" ")}
+              />
+            </svg>
+          </Show>
           <Show when={textEdit()}>
           {(edit) => {
             const shape = () => shapes().find((candidate) => candidate.id === edit().id);
@@ -1124,7 +1220,7 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
               <input
                 ref={(element) => (textInput = element)}
                 class={styles.textEditor}
-                style={`left:${position().left};top:${position().top};`}
+                style={`left:${position().left};top:${position().top};color:${shape()?.color ?? "currentColor"};`}
                 value={edit().value}
                 aria-label="Editar texto del dibujo"
                 onInput={(event) => updateText(event.currentTarget.value)}

@@ -137,6 +137,20 @@ convierten en clases globales de aplicación.
   `.assets/`; al cerrarse se muestra solo el dibujo, recortado a sus bounds,
   sin una pizarra vacía alrededor. Mientras se edita, el lienzo queda aislado
   del editor para que sus gestos no muevan la nota.
+- La barra flotante de formato de Crepe (`.milkdown-toolbar`) sale a los 20 ms
+  de seleccionar y tapa el texto. Se deja montada pero transparente y solo se
+  revela con `:hover` o `:focus-within`, de modo que sigue siendo alcanzable
+  con el puntero y con el teclado sin saltar a los ojos.
+- KaTeX es `white-space: nowrap`, así que una fórmula larga ensanchaba la
+  columna de lectura. `span[data-type="math_inline"]` y `.katex-display` quedan
+  acotados a `max-width: 100%` con desplazamiento horizontal interno, más una
+  red de seguridad `overflow-wrap: anywhere` en párrafos, listas y celdas.
+- En la pizarra, el texto en edición oculta su `<text>` del SVG: el input ocupa
+  su hueco con el mismo tamaño de fuente y el color de la figura, para que no
+  se lea dos veces superpuesto. Al arrastrar con el botón pulsado se dibuja el
+  rastro del puntero en una capa `pointer-events: none` que se desvanece al
+  soltar; nunca entra en el SVG ni en el historial de deshacer. Un clic en el
+  dibujo marca el nodo como activo con un contorno, sin desplazar el layout.
 - El papel del lienzo es redimensionable: la esquina inferior derecha arrastra
   el borde, y el rectángulo elegido se serializa como `width`/`height` +
   `viewBox` del propio SVG, así que sobrevive al guardado. El `viewBox` es la
