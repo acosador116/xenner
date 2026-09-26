@@ -23,13 +23,21 @@ const SKINS: Record<SkinId, Skin> = {
     id: 'webcore',
     name: 'WebCore',
     file: 'background.txt',
-    code: `# interfaz principal\nbackground="#111018"\nblur="0px"\ntext="#fff8dc"\naccent="#d9ff39"`,
+    code: `# interfaz principal
+background="#ffffff"
+blur="0px"
+text="#171717"
+accent="#2563eb"`,
   },
   frosted: {
     id: 'frosted',
     name: 'Frosted Glass',
     file: 'background.txt',
-    code: `# escritorio semitransparente\nbackground="rgba(28,34,44,0.34)"\nblur="32px"\ntext="#f4f7fb"\naccent="#b7cee1"`,
+    code: `# escritorio semitransparente
+background="rgba(255,255,255,0.85)"
+blur="12px"
+text="#171717"
+accent="#2563eb"`,
   },
 };
 
@@ -39,14 +47,14 @@ const INITIAL_NOTES: Note[] = [
     title: 'UNA PIEL ES UN ARCHIVO',
     preview: 'Toolbar, fondo, botones…',
     body: [
-      'Cada superficie de xenner tiene su propio archivo. Fondo, toolbar, sidebar, botones y campos no se esconden detrás de un constructor.',
+      'Cada superficie de Xenner tiene su propio archivo. Fondo, toolbar, sidebar, botones y campos no se esconden detrás de un constructor.',
       'Abre un TXT, cambia una clave y deja que la ventana se rehaga a tu ritmo.',
     ],
     date: '24.09.2026 / 09:41',
   },
   {
     id: 2,
-    title: 'CYBER MEMORY / 98',
+    title: 'NOTAS QUE SOBREVIVEN',
     preview: 'La idea sobrevive al reload.',
     body: [
       'Las skins se recargan sin mezclar su experimento con el contenido de tus notas.',
@@ -85,7 +93,7 @@ export default function ProductDemo() {
       title: 'NOTA NUEVA_001',
       preview: 'Escribe aquí antes de que huya…',
       body: ['Una página en blanco para la siguiente idea.'],
-      date: 'AHORA / MEMORY RAM',
+      date: 'AHORA / LOCAL',
     };
 
     setNotes((current) => [note, ...current]);
@@ -95,10 +103,6 @@ export default function ProductDemo() {
   return (
     <div className="product-demo" data-skin={skinId}>
       <div className="demo-stage">
-        <div className="demo-stage__sun" aria-hidden="true"></div>
-        <div className="demo-stage__stars" aria-hidden="true"></div>
-        <div className="demo-stage__grid" aria-hidden="true"></div>
-
         <div className="demo-window">
           <header className="demo-toolbar">
             <div className="demo-window__controls" aria-hidden="true">
@@ -111,7 +115,7 @@ export default function ProductDemo() {
             </div>
 
             <div className="demo-toolbar__status">
-              <span aria-hidden="true"></span> LOCAL_SAVE
+              <span aria-hidden="true"></span> Guardado local
             </div>
           </header>
 
@@ -122,7 +126,7 @@ export default function ProductDemo() {
           <div className="demo-layout">
             <aside className="demo-sidebar" aria-label="Notas de ejemplo">
               <div className="demo-sidebar__heading">
-                <span>▰ NOTAS</span>
+                <span>Notas</span>
                 <span>{String(notes.length).padStart(2, '0')}</span>
               </div>
 
@@ -151,14 +155,14 @@ export default function ProductDemo() {
               </div>
 
               <button className="demo-add" type="button" onClick={addNote}>
-                <b aria-hidden="true">+</b> CREAR NOTA
+                <b aria-hidden="true">+</b> Crear nota
               </button>
             </aside>
 
             <article className="demo-editor" aria-live="polite">
               <div className="demo-editor__meta">
                 <span>{activeNote.date}</span>
-                <span>TEXT MODE / UTF-8</span>
+                <span>Texto / UTF-8</span>
               </div>
               <h3>{activeNote.title}</h3>
               <div className="demo-editor__body">
@@ -167,22 +171,22 @@ export default function ProductDemo() {
                 ))}
               </div>
               <div className="demo-editor__footer">
-                <span>SKIN: {activeSkin.name}</span>
-                <span>{wordCount} WORDS</span>
+                <span>Skin: {activeSkin.name}</span>
+                <span>{wordCount} palabras</span>
               </div>
             </article>
           </div>
 
           <footer className="demo-statusbar">
-            <span><i aria-hidden="true"></i> READY</span>
-            <span>TXT ENGINE</span>
-            <span>{notes.length} FILES</span>
-            <span>XENNER 0.1</span>
+            <span><i aria-hidden="true"></i> Listo</span>
+            <span>TXT Engine</span>
+            <span>{notes.length} archivos</span>
+            <span>Xenner 0.1</span>
           </footer>
         </div>
 
         <div className="skin-switcher" role="group" aria-label="Vista previa de skins">
-          <span>PALETA:</span>
+          <span>Paleta:</span>
           {(Object.keys(SKINS) as SkinId[]).map((id) => (
             <button
               type="button"

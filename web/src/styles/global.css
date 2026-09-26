@@ -1,25 +1,23 @@
 :root {
-  --ink: #111018;
-  --ink-soft: #24202f;
-  --paper: #e8e1cb;
-  --paper-bright: #fff8dc;
-  --paper-shadow: #bdb49d;
-  --hot: #ff2a8f;
-  --hot-dark: #b70c5c;
-  --cyan: #18e6e6;
-  --violet: #5932b5;
-  --acid: #d9ff39;
-  --orange: #ff7433;
-  --line: #111018;
-  --muted: #615c61;
-  --font-display: Impact, Haettenschweiler, 'Arial Narrow Bold', 'Arial Black', sans-serif;
-  --font-ui: 'MS Gothic', 'Osaka-Mono', 'Noto Sans Mono', 'Courier New', monospace;
-  --font-body: Verdana, 'MS Gothic', Geneva, sans-serif;
-  --font-serif: 'Times New Roman', 'Noto Serif', serif;
-  --container: 92rem;
-  --gutter: clamp(1rem, 4vw, 6rem);
+  --bg: #ffffff;
+  --bg-subtle: #fafafa;
+  --bg-muted: #f5f5f5;
+  --surface: #ffffff;
+  --border: #e5e5e5;
+  --border-strong: #d4d4d4;
+  --text: #171717;
+  --text-secondary: #525252;
+  --text-muted: #a3a3a3;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-subtle: #eff6ff;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace;
+  --container: 72rem;
+  --gutter: 1.5rem;
+  --radius: 8px;
   color-scheme: light;
-  font-family: var(--font-body);
+  font-family: var(--font-sans);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -32,20 +30,17 @@
 html {
   min-width: 0;
   scroll-behavior: smooth;
-  scroll-padding-top: 5.5rem;
-  background: var(--ink);
+  scroll-padding-top: 5rem;
+  background: var(--bg);
 }
 
 body {
   min-width: 0;
   min-height: 100vh;
   margin: 0;
-  color: var(--ink);
-  background-color: var(--paper);
-  background-image:
-    linear-gradient(rgba(17, 16, 24, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(17, 16, 24, 0.035) 1px, transparent 1px);
-  background-size: 18px 18px;
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.6;
 }
 
 body,
@@ -68,13 +63,14 @@ svg {
 }
 
 ::selection {
-  color: var(--paper-bright);
-  background: var(--hot);
+  color: #fff;
+  background: var(--accent);
 }
 
 :focus-visible {
-  outline: 3px dotted var(--hot);
-  outline-offset: 5px;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .visually-hidden {
@@ -94,16 +90,15 @@ svg {
   z-index: 100;
   top: 0.75rem;
   left: 0.75rem;
-  padding: 0.7rem 1rem;
-  color: var(--ink);
-  border: 2px solid var(--ink);
-  background: var(--acid);
-  box-shadow: 4px 4px 0 var(--ink);
-  font-family: var(--font-ui);
-  font-size: 0.75rem;
-  font-weight: 800;
+  padding: 0.6rem 1rem;
+  color: #fff;
+  border-radius: var(--radius);
+  background: var(--accent);
+  font-size: 0.875rem;
+  font-weight: 500;
   text-decoration: none;
-  transform: translateY(-160%);
+  transform: translateY(-200%);
+  transition: transform 150ms ease;
 }
 
 .skip-link:focus {
@@ -116,81 +111,72 @@ svg {
 }
 
 .eyebrow {
-  width: fit-content;
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
-  color: inherit;
-  font-family: var(--font-ui);
-  font-size: 0.62rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  line-height: 1.2;
+  gap: 0.5rem;
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
 }
 
 .eyebrow::before {
-  width: 1.8rem;
-  height: 0.28rem;
+  width: 1.25rem;
+  height: 2px;
   content: '';
   background: currentColor;
+  border-radius: 1px;
 }
 
 .button-row {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .button {
-  min-height: 3.2rem;
-  padding: 0 1.15rem;
+  min-height: 2.5rem;
+  padding: 0 1.25rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.65rem;
-  color: var(--ink);
-  border: 3px solid var(--ink);
-  border-radius: 0;
-  background: var(--paper-bright);
-  box-shadow: 5px 5px 0 var(--ink);
-  font-family: var(--font-ui);
-  font-size: 0.72rem;
-  font-weight: 900;
-  letter-spacing: 0.03em;
+  gap: 0.5rem;
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: 0.875rem;
+  font-weight: 500;
   text-decoration: none;
-  text-transform: uppercase;
-  transition: transform 100ms ease, box-shadow 100ms ease, background-color 100ms ease;
+  transition: background-color 150ms ease, border-color 150ms ease;
 }
 
 .button:hover {
-  transform: translate(2px, 2px);
-  box-shadow: 3px 3px 0 var(--ink);
-}
-
-.button:active {
-  transform: translate(5px, 5px);
-  box-shadow: 0 0 0 var(--ink);
+  background: var(--bg-muted);
+  border-color: var(--text-muted);
 }
 
 .button--primary {
-  background: var(--acid);
+  color: #fff;
+  border-color: var(--accent);
+  background: var(--accent);
 }
 
 .button--primary:hover {
-  background: var(--hot);
-  color: var(--paper-bright);
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
 }
 
 .button--secondary {
-  color: var(--paper-bright);
-  background: var(--violet);
+  color: var(--text);
+  border-color: var(--border-strong);
+  background: var(--surface);
 }
 
 .button--secondary:hover {
-  color: var(--ink);
-  background: var(--cyan);
+  background: var(--bg-muted);
 }
 
 .button svg {
@@ -198,29 +184,9 @@ svg {
   height: 1rem;
 }
 
-@media (min-width: 1800px) {
-  :root {
-    --container: min(120rem, 94vw);
-    font-size: 18px;
-  }
-}
-
-@media (min-width: 2400px) {
-  :root {
-    --container: min(136rem, 90vw);
-    font-size: 22px;
-  }
-}
-
-@media (min-width: 3200px) {
-  :root {
-    font-size: 24px;
-  }
-}
-
 @media (max-width: 760px) {
   :root {
-    --gutter: 1rem;
+    --gutter: 1.25rem;
   }
 }
 

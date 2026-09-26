@@ -22,9 +22,8 @@ const year = new Date().getFullYear();
     </nav>
 
     <div class="site-footer__drive" aria-label="Información del proyecto">
-      <span class="site-footer__label">disk status</span>
-      <div class="site-footer__meter" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
-      <p>0.1 · MIT<br />{year} / LOCAL</p>
+      <span class="site-footer__label">estado</span>
+      <p>0.1 · MIT<br />{year} / Local</p>
       <a href="#inicio">↑ volver arriba</a>
     </div>
   </div>
@@ -32,28 +31,27 @@ const year = new Date().getFullYear();
 
 <style>
   .site-footer {
-    color: var(--paper-bright);
-    background: var(--ink);
-    border-top: 5px solid var(--hot);
+    color: var(--text);
+    background: var(--bg-subtle);
+    border-top: 1px solid var(--border);
   }
 
   .site-footer__inner {
     width: min(calc(100% - var(--gutter) - var(--gutter)), var(--container));
     margin: 0 auto;
-    padding: 4.5rem 0 2.5rem;
+    padding: 3.5rem 0 2rem;
     display: grid;
     grid-template-columns: 1.25fr 0.9fr 0.55fr;
     align-items: start;
-    gap: 4rem;
+    gap: 3rem;
   }
 
   .site-footer__brand p {
-    max-width: 25rem;
-    margin: 1.35rem 0 0;
-    color: rgba(255, 248, 220, 0.65);
-    font-family: var(--font-ui);
-    font-size: 0.72rem;
-    line-height: 1.8;
+    max-width: 22rem;
+    margin: 1rem 0 0;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.7;
   }
 
   nav {
@@ -61,101 +59,66 @@ const year = new Date().getFullYear();
   }
 
   .site-footer__label {
-    margin-bottom: 1rem;
-    color: var(--hot);
-    font-family: var(--font-ui);
-    font-size: 0.57rem;
-    font-weight: 900;
-    letter-spacing: 0.1em;
+    margin-bottom: 0.75rem;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
     text-transform: uppercase;
   }
 
   nav a {
-    min-height: 2.25rem;
+    min-height: 2rem;
     display: flex;
     align-items: center;
-    gap: 0.7rem;
-    color: var(--paper-bright);
-    border-bottom: 1px dashed #63586e;
-    font-family: var(--font-ui);
-    font-size: 0.65rem;
+    gap: 0.5rem;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    font-size: 0.875rem;
     text-decoration: none;
-  }
-
-  nav a b {
-    color: var(--cyan);
-    font-size: 0.52rem;
+    transition: color 150ms ease;
   }
 
   nav a:hover {
-    padding-left: 0.35rem;
-    color: var(--ink);
-    background: var(--cyan);
+    color: var(--accent);
   }
 
-  nav a:hover b {
-    color: var(--hot-dark);
+  nav a b {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 500;
   }
 
   .site-footer__drive {
-    padding: 1.1rem;
-    color: var(--ink);
-    border: 3px solid var(--paper-bright);
-    background: var(--paper);
-    box-shadow: 6px 6px 0 var(--violet);
-  }
-
-  .site-footer__drive .site-footer__label {
-    color: var(--hot-dark);
-  }
-
-  .site-footer__meter {
-    height: 1.1rem;
-    padding: 0.2rem;
-    display: flex;
-    gap: 0.18rem;
-    border: 2px solid var(--ink);
-    background: #fff;
-  }
-
-  .site-footer__meter i {
-    flex: 1;
-    background: var(--violet);
-  }
-
-  .site-footer__meter i:last-child {
-    background: #bdb49d;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
   }
 
   .site-footer__drive p {
-    margin: 1rem 0 0;
-    font-family: var(--font-ui);
-    font-size: 0.58rem;
-    font-weight: 800;
+    margin: 0.75rem 0 0;
+    font-size: 0.875rem;
     line-height: 1.7;
+    color: var(--text-secondary);
   }
 
   .site-footer__drive a {
-    margin-top: 1.3rem;
-    color: var(--ink);
-    font-family: var(--font-ui);
-    font-size: 0.56rem;
-    font-weight: 900;
+    margin-top: 1rem;
+    color: var(--accent);
+    font-size: 0.875rem;
+    font-weight: 500;
     text-decoration: none;
   }
 
   .site-footer__drive a:hover {
-    color: var(--hot-dark);
+    text-decoration: underline;
   }
 
   @media (max-width: 760px) {
     .site-footer__inner {
       grid-template-columns: 1fr;
-      gap: 3rem;
-    }
-
-    .site-footer__drive {
-      max-width: 18rem;
+      gap: 2.5rem;
     }
   }
 </style>

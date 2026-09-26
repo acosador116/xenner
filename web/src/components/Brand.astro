@@ -7,38 +7,40 @@ const { class: className } = Astro.props;
 ---
 
 <a class:list={['brand', className]} href="/" aria-label="xenner, inicio">
-  <svg class="brand__mark" viewBox="0 0 36 36" aria-hidden="true" shape-rendering="crispEdges">
-    <path fill="currentColor" d="M0 0h36v36H0z"></path>
-    <path fill="var(--brand-mark-ink)" d="M5 5h7v5H5zm19 0h7v7h-7zM14 14h8v8h-8zM5 24h7v7H5zm19 0h7v7h-7z"></path>
-    <path fill="var(--brand-mark-accent)" d="M12 5h12v4H12zM12 27h12v4H12zM5 12h4v12H5zM27 12h4v12h-4z"></path>
+  <svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true">
+    <rect width="32" height="32" rx="6" fill="currentColor"></rect>
+    <path fill="var(--brand-mark-bg)" d="M8 8h5v4H8zm11 0h5v5h-5zM13 13h6v6h-6zM8 18h5v6H8zm11 0h5v6h-5z"></path>
+    <path fill="var(--brand-mark-accent)" d="M12 8h8v3H12zM12 21h8v3H12zM8 12h3v8H8zM21 12h3v8h-3z"></path>
   </svg>
   <span>XENNER</span>
 </a>
 
 <style>
   .brand {
-    --brand-mark-ink: #111018;
-    --brand-mark-accent: #d9ff39;
+    --brand-mark-bg: #ffffff;
+    --brand-mark-accent: #2563eb;
     display: inline-flex;
     align-items: center;
-    gap: 0.62rem;
-    color: inherit;
-    font-family: var(--font-ui);
-    font-size: 0.88rem;
-    font-weight: 900;
-    letter-spacing: 0.08em;
+    gap: 0.5rem;
+    color: var(--text);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
     text-decoration: none;
-    text-shadow: 2px 2px 0 var(--hot);
   }
 
   .brand:hover {
-    text-shadow: 2px 2px 0 var(--cyan);
+    color: var(--accent);
   }
 
   .brand__mark {
-    width: 1.8rem;
-    height: 1.8rem;
+    width: 1.75rem;
+    height: 1.75rem;
     flex: none;
-    color: var(--hot);
+    color: var(--text);
+  }
+
+  .brand:hover .brand__mark {
+    color: var(--accent);
   }
 </style>
