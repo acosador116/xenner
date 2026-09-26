@@ -1,7 +1,6 @@
 import { Show } from "solid-js";
 
 import type { VaultErrorShape, WorkspaceScan, WorkspaceTreeNode } from "../../types/workspace";
-import { baseName } from "../../utils/paths";
 import { CreationRow, type CreationKind } from "../explorer/CreationRow";
 import { Explorer, type CreationDraft } from "../explorer/Explorer";
 import { FolderOpenIcon, FolderPlusIcon, GearIcon, PlusIcon, RefreshIcon } from "../ui/Icons";
@@ -48,8 +47,7 @@ export function ExplorerSidebar(props: ExplorerSidebarProps) {
       <header class={styles.header}>
         <div class={styles.titleRow}>
           <div class={styles.titleCopy}>
-            <span>Explorador</span>
-            <strong title={root()}>{baseName(root() || "Biblioteca")}</strong>
+            <strong title={root()}>Notas</strong>
           </div>
           <div class={styles.windowActions}>
             <IconButton
@@ -176,9 +174,6 @@ export function ExplorerSidebar(props: ExplorerSidebarProps) {
 
       <footer class={styles.footer}>
         <strong>xenner</strong>
-        <span title={root()}>
-          {props.workspace?.info.truncated ? "Explorer limitado" : "Markdown local"}
-        </span>
       </footer>
     </aside>
   );
