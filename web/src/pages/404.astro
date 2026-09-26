@@ -2,53 +2,49 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="Página no encontrada" description="La página solicitada no existe." noindex>
-  <main class="not-found" id="contenido">
-    <div class="container not-found__inner">
-      <p class="eyebrow">Error 404</p>
-      <h1 class="not-found__title">Esta nota<br />no está aquí.</h1>
-      <p class="not-found__text">
-        La dirección no existe, el archivo cambió de sitio o alguien lo movió dentro de una
-        carpeta equivocada.
+<BaseLayout title="Página no encontrada" description="Esta página no existe." noindex>
+  <main class="nf" id="contenido">
+    <div class="shell nf__inner">
+      <p class="label">Error 404</p>
+      <h1 class="nf__title">Esta nota<br />no está aquí.</h1>
+      <p class="nf__lead">
+        La dirección no existe. Quizá la moviste de sitio, o el enlace tenía un error.
       </p>
-      <div class="button-row">
-        <a class="button button--primary button--lg" href="/">Volver al inicio</a>
-        <a class="button button--lg" href="https://github.com/acosador116/xenner" target="_blank" rel="noreferrer">
-          Ver el código
-        </a>
+      <div class="nf__cta">
+        <a class="cta cta--fill" href="/">Volver al inicio</a>
       </div>
     </div>
   </main>
 </BaseLayout>
 
 <style>
-  .not-found {
-    min-height: calc(100svh - var(--header-h));
-    padding: var(--space-24) 0;
+  .nf {
+    min-height: 74vh;
+    padding: var(--air) 0;
     display: grid;
     align-content: center;
-    background:
-      radial-gradient(60rem 30rem at 50% -10%, var(--accent-subtle), transparent 70%),
-      var(--bg);
   }
 
-  .not-found__inner {
-    max-width: 36rem;
+  .nf__inner {
+    max-width: 30rem;
     display: grid;
-    gap: var(--space-4);
+    gap: 0.9rem;
   }
 
-  .not-found__title {
-    font-size: clamp(2.25rem, 6vw, var(--text-2xl));
+  .nf__title {
+    font-family: var(--serif);
+    font-size: clamp(2.25rem, 5.4vw, 3.25rem);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
   }
 
-  .not-found__text {
-    color: var(--text-secondary);
-    font-size: var(--text-md);
-    line-height: var(--leading-relaxed);
+  .nf__lead {
+    color: var(--ink-2);
+    font-size: var(--t-md);
   }
 
-  .not-found .button-row {
-    margin-top: var(--space-4);
+  .nf__cta {
+    margin-top: 0.6rem;
   }
 </style>

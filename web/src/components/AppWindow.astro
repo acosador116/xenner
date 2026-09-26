@@ -1,0 +1,126 @@
+---
+import './appwindow.css';
+
+interface Props {
+  class?: string;
+  /** 'idea' para la portada, 'reuniones' para la sección de carpetas. */
+  variant?: 'idea' | 'reuniones';
+}
+
+const { class: className, variant = 'idea' } = Astro.props;
+
+const TREE = [
+  { name: 'Ideas', depth: 0, folder: true, active: variant === 'idea' },
+  { name: 'Notas de escritorio', depth: 1, folder: false, active: true },
+  { name: 'Borradores', depth: 1, folder: false, active: false },
+  { name: 'Trabajo', depth: 0, folder: true, active: variant === 'reuniones' },
+  { name: 'Reuniones', depth: 1, folder: false, active: false },
+  { name: 'Plan', depth: 1, folder: false, active: false },
+  { name: 'Lectura', depth: 0, folder: true, active: false },
+];
+
+const COPY = {
+  idea: {
+    file: 'Notas de escritorio',
+    crumb: ['Ideas', 'Notas de escritorio.md'],
+    title: 'Notas de escritorio',
+    body: [
+      'El título de esta nota es el nombre del archivo. Si lo cambio, el archivo se renombra. No hay una base de datos en medio: lo que escribo es un Markdown que puedo abrir con cualquier editor.',
+      'El formato rico se guarda como Markdown legible, con los adjuntos en una carpeta de recursos junto al archivo.',
+    ],
+    tasks: [
+      { text: 'Elegir la carpeta de la biblioteca', done: true },
+      { text: 'Escribir la primera nota', done: false },
+      { text: 'Arrastrar la nota a otra carpeta', done: false },
+    ],
+    quote: 'TXT plenos para la piel, Markdown pleno para el texto.',
+  },
+  reuniones: {
+    file: 'Reunión del lunes',
+    crumb: ['Trabajo', 'Reunión del lunes.md'],
+    title: 'Reunión del lunes',
+    body: [
+      'Esta nota vivía en otra carpeta. Arrastré el archivo hasta Trabajo y xenner movió con él la carpeta de imágenes, para que los enlaces sigan funcionando.',
+      'El Markdown no ha cambiado: es el mismo archivo, en otro sitio.',
+    ],
+    tasks: [
+      { text: 'Mover el acta a Trabajo', done: true },
+      { text: 'Comprobar que las imágenes siguen en su sitio', done: true },
+      { text: 'Enviar el resumen', done: false },
+    ],
+    quote: 'Mover una nota es mover un archivo. Nada más.',
+  },
+} as const;
+
+const c = COPY[variant];
+---
+
+<div class:list={['win', className]}>
+  <div class="win__bar">
+    <div class="win__dots" aria-hidden="true"><i></i><i></i><i></i></div>
+    <p class="win__title"><span class="win__name">{c.file}</span>.md</p>
+    <p class="win__saved"><i aria-hidden="true"></i> Guardado</p>
+  </div>
+
+  <div class="win__tools" aria-hidden="true">
+    <span class="win__tool">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4h8M4 8h8M4 12h5"></path></svg>
+    </span>
+    <span class="win__tool">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 5h10M3 8h10M3 11h6"></path></svg>
+    </span>
+    <span class="win__tool win__tool--on">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M4 12.5 12.5 4M9 4h3.5v3.5"></path></svg>
+    </span>
+    <span class="win__rule"></span>
+    <span class="win__tool">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M5 5v6M8 5v6M11 5v6"></path></svg>
+    </span>
+    <span class="win__tool">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M4 4h8v8H4zM6.5 6.5h3v3h-3z"></path></svg>
+    </span>
+    <span class="win__tool">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 3v10M3 8h10"></path></svg>
+    </span>
+    <span class="win__tool">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v10M5 3a1.5 1.5 0 1 0 0 .01M11 13V3m0 10a1.5 1.5 0 1 0 0-.01"></path></svg>
+    </span>
+  </div>
+
+  <div class="win__body">
+    <nav class="win__side" aria-label="Explorador de la biblioteca">
+      <div class="win__side-head"><span>Biblioteca</span><span>6</span></div>
+      <ul class="win__tree">
+        {TREE.map((node) => (
+          <li class="win__node" data-depth={node.depth} data-active={node.active}>
+            {node.folder ? (
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M2 4.5h4l1.2 1.5H14v6H2z"></path></svg>
+            ) : (
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M4 2.5h5l3 3v8H4zM9 2.5v3h3"></path></svg>
+            )}
+            <span>{node.name}</span>
+          </li>
+        ))}
+      </ul>
+      <p class="win__new"><b>+</b> Nueva nota</p>
+    </nav>
+
+    <article class="win__doc">
+      <p class="win__crumb"><b>{c.crumb[0]}</b> / {c.crumb[1]}</p>
+      <h3>{c.title}</h3>
+      {c.body.map((paragraph) => <p>{paragraph}</p>)}
+      <ul class="win__list">
+        {c.tasks.map((task) => (
+          <li data-done={task.done}>{task.text}</li>
+        ))}
+      </ul>
+      <p class="win__quote">{c.quote}</p>
+    </article>
+  </div>
+
+  <div class="win__foot">
+    <span>Markdown</span>
+    <span>6 notas</span>
+    <span>Biblioteca local</span>
+  </div>
+</div>

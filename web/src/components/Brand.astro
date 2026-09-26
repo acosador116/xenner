@@ -8,14 +8,12 @@ const { class: className } = Astro.props;
 
 <a class:list={['brand', className]} href="/" aria-label="xenner, inicio">
   <svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true">
-    <rect x="0.75" y="0.75" width="30.5" height="30.5" rx="8.25"
-      fill="none" stroke="currentColor" stroke-width="1.5"></rect>
     <g fill="currentColor">
-      <rect x="8" y="8" width="6" height="6" rx="1.5"></rect>
-      <rect x="18" y="8" width="6" height="6" rx="1.5"></rect>
-      <rect x="13" y="13" width="6" height="6" rx="1.5"></rect>
-      <rect x="8" y="18" width="6" height="6" rx="1.5"></rect>
-      <rect x="18" y="18" width="6" height="6" rx="1.5"></rect>
+      <rect x="3" y="3" width="10" height="10" rx="2.6" opacity="0.9"></rect>
+      <rect x="19" y="3" width="10" height="10" rx="2.6" opacity="0.45"></rect>
+      <rect x="11" y="11" width="10" height="10" rx="2.6" opacity="0.68"></rect>
+      <rect x="3" y="19" width="10" height="10" rx="2.6" opacity="0.45"></rect>
+      <rect x="19" y="19" width="10" height="10" rx="2.6" opacity="0.9"></rect>
     </g>
   </svg>
   <span class="brand__name">xenner</span>
@@ -25,27 +23,26 @@ const { class: className } = Astro.props;
   .brand {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-2);
-    color: var(--text);
-    font-size: var(--text-base);
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    text-decoration: none;
+    gap: 0.55rem;
     flex: none;
-  }
-
-  .brand__name {
-    transition: color var(--dur) var(--ease);
-  }
-
-  .brand:hover .brand__name {
-    color: var(--accent-text);
+    color: var(--ink);
   }
 
   .brand__mark {
-    width: 1.75rem;
-    height: 1.75rem;
+    width: 1.55rem;
+    height: 1.55rem;
     flex: none;
-    color: var(--accent);
+    color: var(--accent-ink);
+  }
+
+  .brand__name {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    transition: color var(--t-fast) var(--ease);
+  }
+
+  .brand:hover .brand__name {
+    color: var(--accent-ink);
   }
 </style>

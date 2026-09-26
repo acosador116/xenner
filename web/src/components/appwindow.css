@@ -1,0 +1,373 @@
+/* ==========================================================================
+   La ventana de la app, recreada para la web.
+
+   Colores taken literally from src/skin/defaultSkin.ts (light mode), which
+   is the embedded base skin: surface #ffffff, sidebar #f7f7f5, text #2f2f2f,
+   dim #787774, accent #2383e2. The same SkinEngine rule applies here: the
+   components only consume variables, never hardcoded colors.
+   ========================================================================== */
+
+.win {
+  --sk-bg: #ffffff;
+  --sk-text: #2f2f2f;
+  /* El #787774 real de defaultSkin.ts se queda en 4.48:1 sobre blanco, por
+     debajo de AA. Aquí se oscurece a #726f64 (5.03:1) para que la maqueta
+     de la web cumpla; el valor de la app se documenta aparte. */
+  --sk-dim: #726f64;
+  --sk-accent: #2383e2;
+  --sk-accent-ink: #1c66bd;
+  --sk-sidebar: #f7f7f5;
+  --sk-panel: #ffffff;
+  --sk-radius: 12px;
+  --sk-line: #e6e6e3;
+  --sk-line-2: #eeeeeb;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 30rem;
+  border-radius: var(--sk-radius);
+  color: var(--sk-text);
+  background: var(--sk-bg);
+  box-shadow: var(--lift-3), 0 0 0 1px var(--sk-line);
+  font-family: var(--sans);
+  overflow: hidden;
+}
+
+/* ---------- barra superior ---------- */
+
+.win__bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.9rem;
+  border-bottom: 1px solid var(--sk-line);
+  background: var(--sk-bg);
+  flex: none;
+}
+
+.win__dots {
+  display: flex;
+  gap: 0.4rem;
+  flex: none;
+}
+
+.win__dots i {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #e6e6e3;
+}
+
+.win__dots i:nth-child(1) { background: #f4c7c3; }
+.win__dots i:nth-child(2) { background: #f7dfb0; }
+.win__dots i:nth-child(3) { background: #c3e3c8; }
+
+.win__title {
+  min-width: 0;
+  font-size: 0.8125rem;
+  color: var(--sk-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.win__name {
+  color: var(--sk-text);
+  font-weight: 600;
+}
+
+.win__saved {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: none;
+  font-size: 0.75rem;
+  color: var(--sk-dim);
+}
+
+.win__saved i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4a9c5f;
+}
+
+/* ---------- barra de formato ---------- */
+
+.win__tools {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.45rem 0.9rem;
+  border-bottom: 1px solid var(--sk-line-2);
+  overflow: hidden;
+}
+
+.win__tool {
+  width: 1.7rem;
+  height: 1.7rem;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: 7px;
+  color: var(--sk-dim);
+  transition: background-color 150ms var(--ease), color 150ms var(--ease);
+}
+
+.win__tool:hover {
+  color: var(--sk-text);
+  background: #f1f1ef;
+}
+
+.win__tool--on {
+  color: var(--sk-accent);
+  background: #eaf2fd;
+}
+
+.win__tool svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.win__rule {
+  width: 1px;
+  height: 1.1rem;
+  margin-inline: 0.35rem;
+  flex: none;
+  background: var(--sk-line);
+}
+
+/* ---------- cuerpo ---------- */
+
+.win__body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 15rem 1fr;
+  min-height: 0;
+}
+
+/* ---------- explorador ---------- */
+
+.win__side {
+  min-width: 0;
+  padding: 0.8rem 0.5rem;
+  border-right: 1px solid var(--sk-line);
+  background: var(--sk-sidebar);
+  overflow: hidden;
+}
+
+.win__side-head {
+  padding: 0 0.5rem 0.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.win__side-head span:first-child {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sk-dim);
+}
+
+.win__side-head span:last-child {
+  font-size: 0.6875rem;
+  color: var(--sk-dim);
+}
+
+.win__tree {
+  display: grid;
+  gap: 1px;
+}
+
+.win__node {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 7px;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: #55524c;
+  white-space: nowrap;
+}
+
+.win__node[data-depth='1'] {
+  padding-left: 1.3rem;
+}
+
+.win__node[data-active='true'] {
+  color: var(--sk-text);
+  background: #e7e7e4;
+  font-weight: 600;
+}
+
+.win__node svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  flex: none;
+  color: var(--sk-dim);
+}
+
+.win__node[data-active='true'] svg {
+  color: var(--sk-accent-ink);
+}
+
+.win__node span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.win__new {
+  margin-top: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.5rem;
+  border: 1px dashed var(--sk-line);
+  border-radius: 7px;
+  font-size: 0.75rem;
+  color: var(--sk-dim);
+}
+
+.win__new b {
+  color: var(--sk-accent-ink);
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* ---------- editor ---------- */
+
+.win__doc {
+  min-width: 0;
+  padding: clamp(1.25rem, 2.6vw, 2.1rem) clamp(1.25rem, 3.2vw, 2.6rem);
+  background: var(--sk-bg);
+  overflow: hidden;
+}
+
+.win__crumb {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+  font-size: 0.75rem;
+  color: var(--sk-dim);
+}
+
+.win__crumb b {
+  color: #55524c;
+  font-weight: 500;
+}
+
+.win__doc h3 {
+  font-family: var(--serif);
+  font-size: clamp(1.5rem, 2.6vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+  margin-bottom: 0.9rem;
+}
+
+.win__doc p {
+  max-width: 36rem;
+  font-family: var(--serif);
+  font-size: 1rem;
+  line-height: 1.75;
+  color: #55524c;
+}
+
+.win__doc p + p {
+  margin-top: 0.7rem;
+}
+
+.win__list {
+  margin-top: 1.1rem;
+  display: grid;
+  gap: 0.4rem;
+  max-width: 30rem;
+}
+
+.win__list li {
+  position: relative;
+  padding-left: 1.4rem;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: #55524c;
+}
+
+.win__list li::before {
+  position: absolute;
+  left: 0;
+  top: 0.1rem;
+  content: '☐';
+  color: var(--sk-dim);
+  font-size: 0.85rem;
+}
+
+.win__list li[data-done='true'] {
+  color: #78756d;
+  text-decoration: line-through;
+  text-decoration-color: #c9c6be;
+}
+
+.win__list li[data-done='true']::before {
+  content: '☑';
+  color: #4a9c5f;
+}
+
+.win__quote {
+  margin-top: 1.2rem;
+  padding: 0.1rem 0 0.1rem 0.9rem;
+  max-width: 30rem;
+  border-left: 2px solid var(--sk-accent);
+  font-family: var(--serif);
+  font-size: 0.9375rem;
+  font-style: italic;
+  line-height: 1.65;
+  color: #6d6961;
+}
+
+/* ---------- pie ---------- */
+
+.win__foot {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.4rem 0.9rem;
+  border-top: 1px solid var(--sk-line-2);
+  background: var(--sk-bg);
+  font-size: 0.6875rem;
+  color: var(--sk-dim);
+  flex: none;
+}
+
+.win__foot span:last-child {
+  margin-left: auto;
+}
+
+/* ---------- responsive ---------- */
+
+@media (max-width: 720px) {
+  .win__body {
+    grid-template-columns: 1fr;
+  }
+
+  .win__side {
+    border-right: 0;
+    border-bottom: 1px solid var(--sk-line);
+  }
+
+  .win__tree {
+    grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  }
+
+  .win__node[data-depth='1'] {
+    padding-left: 0.5rem;
+  }
+}
