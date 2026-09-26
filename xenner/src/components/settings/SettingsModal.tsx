@@ -1,12 +1,7 @@
 import { createSignal, For, onMount, Show } from "solid-js";
 
-import { FONT_OPTIONS } from "../../data/appearance";
-import {
-  SETTINGS_SECTIONS,
-  THEME_MODES,
-  type SettingsNavigationItem,
-  type SettingsSection,
-} from "../../data/settings";
+import { DEFAULT_APPEARANCE, FONT_OPTIONS, isDefaultAppearance } from "../../data/appearance";
+import { SETTINGS_SECTIONS, THEME_MODES, type SettingsNavigationItem, type SettingsSection } from "../../data/settings";
 import styles from "../../styles/components/SettingsModal.module.css";
 import type { Appearance } from "../../types/appearance";
 import type { SkinInfo } from "../../types/skin";
@@ -29,6 +24,7 @@ export interface SettingsModalProps {
 interface AppearanceField {
   key: "editorSize" | "lineHeight" | "contentWidth";
   label: string;
+  /** Explica para qué sirve, no repite la etiqueta. */
   hint: string;
   min: number;
   max: number;
@@ -40,7 +36,7 @@ const APPEARANCE_FIELDS: readonly AppearanceField[] = [
   {
     key: "editorSize",
     label: "Tamaño del texto",
-    hint: "Del cuerpo de la nota",
+    hint: "El cuerpo de tus notas",
     min: 12,
     max: 24,
     step: 1,
@@ -49,7 +45,7 @@ const APPEARANCE_FIELDS: readonly AppearanceField[] = [
   {
     key: "lineHeight",
     label: "Interlineado",
-    hint: "Separación entre líneas",
+    hint: "Cuánto aire hay entre líneas",
     min: 1.2,
     max: 2.2,
     step: 0.05,
@@ -58,7 +54,7 @@ const APPEARANCE_FIELDS: readonly AppearanceField[] = [
   {
     key: "contentWidth",
     label: "Ancho de lectura",
-    hint: "Columna del texto, entre 560 y 1200 px",
+    hint: "Cuántas letras caben en cada línea",
     min: 560,
     max: 1200,
     step: 20,
@@ -82,9 +78,24 @@ export function SettingsModal(props: SettingsModalProps) {
     props.onAppearanceChange({ ...props.appearance, [field.key]: value });
   };
 
-  // La skin embebida es la que trae la paleta clara/oscura en global.css, así
-  // que solo tiene sentido alternar el modo cuando no hay una skin encima.
-  const showThemeModes = (): boolean => props.activeSkin === "";
+  // Nombre del tema activo, para poder nombrarlo en vez de decir "una skin".
+  const activeSkinName = (): string | null => {
+    if (props.activeSkin === "") return null;
+    return props.skins.find((skin) => skin.id === props.activeSkin)?.name ?? null;
+  };
+
+  // Un tema propio trae su propia paleta, así que el modo claro/oscuro solo
+  // tiene sentido con el tema de Xenner.
+  const themeModeLocked = (): boolean => props.activeSkin !== "";
+
+  const themeModeHint = (): string => {
+    if (!themeModeLocked()) return "Sigue a tu sistema o fija uno";
+    const name = activeSkinName();
+    return name ? `Cambia con el tema «${name}»` : "Cambia con el tema elegido";
+  };
+
+  const canReset = (): boolean =>
+    section() === "appearance" && !isDefaultAppearance(props.appearance);
 
   return (
     <ModalBackdrop onBackdropPointerDown={props.onClose}>
@@ -121,13 +132,21 @@ export function SettingsModal(props: SettingsModalProps) {
 
         <section class={styles.content}>
           <header class={styles.header}>
-            <div>
-              <p>Preferencias</p>
-              <h2 id="settings-title">{current().label}</h2>
+            <h2 id="settings-title">{current().label}</h2>
+            <div class={styles.headerActions}>
+              <Show when={canReset()}>
+                <button
+                  type="button"
+                  class={styles.reset}
+                  onClick={() => props.onAppearanceChange({ ...DEFAULT_APPEARANCE })}
+                >
+                  Restablecer
+                </button>
+              </Show>
+              <IconButton aria-label="Cerrar configuración" onClick={props.onClose}>
+                <CloseIcon />
+              </IconButton>
             </div>
-            <IconButton aria-label="Cerrar configuración" onClick={props.onClose}>
-              <CloseIcon />
-            </IconButton>
           </header>
 
           <div class={styles.scroll}>
@@ -136,46 +155,47 @@ export function SettingsModal(props: SettingsModalProps) {
                 <div class={styles.group}>
                   <h3 class={styles.groupTitle}>Modo de color</h3>
                   <p class={styles.groupHint}>
-                    El tema base vive en <code>global.css</code> y cambia con
-                    esta preferencia. Las skins de arriba tienen su propia paleta.
+                    Elige si Xenner se ve claro, oscuro o como el sistema que uses.
                   </p>
-                  <Show
-                    when={showThemeModes()}
-                    fallback={
-                      <div class={styles.notice}>
-                        <InfoIcon />
-                        <span>
-                          Activa <strong>Xenner</strong> para alternar entre modo claro y
-                          oscuro. Con una skin instalada se usa su paleta.
-                        </span>
+                  <div class={styles.card}>
+                    <div class={styles.row}>
+                      <div class={styles.rowLabel}>
+                        <strong>Tema</strong>
+                        <small>{themeModeHint()}</small>
                       </div>
-                    }
-                  >
-                    <div class={styles.card}>
-                      <div class={styles.row}>
-                        <div class={styles.rowLabel}>
-                          <strong>Tema</strong>
-                          <small>Sigue al sistema o fíjalo</small>
-                        </div>
-                        <div class={styles.rowControl}>
-                          <div class={styles.segmented} role="radiogroup" aria-label="Modo de color">
-                            <For each={THEME_MODES}>
-                              {(mode) => (
-                                <button
-                                  type="button"
-                                  role="radio"
-                                  aria-checked={props.appearance.mode === mode.id}
-                                  onClick={() =>
-                                    props.onAppearanceChange({ ...props.appearance, mode: mode.id })
-                                  }
-                                >
-                                  {mode.label}
-                                </button>
-                              )}
-                            </For>
-                          </div>
+                      <div class={styles.rowControl}>
+                        <div
+                          class={styles.segmented}
+                          role="radiogroup"
+                          aria-label="Modo de color"
+                          aria-disabled={themeModeLocked() ? "true" : undefined}
+                        >
+                          <For each={THEME_MODES}>
+                            {(mode) => (
+                              <button
+                                type="button"
+                                role="radio"
+                                aria-checked={props.appearance.mode === mode.id}
+                                disabled={themeModeLocked()}
+                                onClick={() =>
+                                  props.onAppearanceChange({ ...props.appearance, mode: mode.id })
+                                }
+                              >
+                                {mode.label}
+                              </button>
+                            )}
+                          </For>
                         </div>
                       </div>
+                    </div>
+                  </div>
+                  <Show when={themeModeLocked()}>
+                    <div class={styles.notice}>
+                      <InfoIcon />
+                      <span>
+                        Para poder alternar entre claro y oscuro, vuelve al tema{" "}
+                        <strong>Xenner</strong> en la sección Temas.
+                      </span>
                     </div>
                   </Show>
                 </div>
@@ -183,7 +203,7 @@ export function SettingsModal(props: SettingsModalProps) {
                 <div class={styles.group}>
                   <h3 class={styles.groupTitle}>Tipografías</h3>
                   <p class={styles.groupHint}>
-                    La de la interfaz afecta a paneles y menús; la del editor, al texto de las
+                    La de la interfaz afecta a botones y menús; la del editor, al texto de tus
                     notas.
                   </p>
                   <div class={styles.card}>
@@ -205,7 +225,11 @@ export function SettingsModal(props: SettingsModalProps) {
                           }
                         >
                           <For each={FONT_OPTIONS}>
-                            {(font) => <option value={font.value}>{font.label}</option>}
+                            {(font) => (
+                              <option value={font.value} style={`font-family: ${font.value}`}>
+                                {font.label}
+                              </option>
+                            )}
                           </For>
                         </select>
                       </div>
@@ -213,7 +237,7 @@ export function SettingsModal(props: SettingsModalProps) {
                     <div class={styles.row}>
                       <label class={styles.rowLabel} for="editor-font">
                         <strong>Editor</strong>
-                        <small>El cuerpo de la nota</small>
+                        <small>El texto de tus notas</small>
                       </label>
                       <div class={styles.rowControl}>
                         <select
@@ -228,7 +252,11 @@ export function SettingsModal(props: SettingsModalProps) {
                           }
                         >
                           <For each={FONT_OPTIONS}>
-                            {(font) => <option value={font.value}>{font.label}</option>}
+                            {(font) => (
+                              <option value={font.value} style={`font-family: ${font.value}`}>
+                                {font.label}
+                              </option>
+                            )}
                           </For>
                         </select>
                       </div>
@@ -238,7 +266,7 @@ export function SettingsModal(props: SettingsModalProps) {
 
                 <div class={styles.group}>
                   <h3 class={styles.groupTitle}>Lectura</h3>
-                  <p class={styles.groupHint}>Se aplican solo a la nota abierta.</p>
+                  <p class={styles.groupHint}>Solo afecta a la nota que tengas abierta.</p>
                   <div class={styles.card}>
                     <For each={APPEARANCE_FIELDS}>
                       {(field) => (
@@ -271,10 +299,10 @@ export function SettingsModal(props: SettingsModalProps) {
 
               <Show when={section() === "skins"}>
                 <div class={styles.group}>
-                  <h3 class={styles.groupTitle}>Skins</h3>
+                  <h3 class={styles.groupTitle}>Elige un tema</h3>
                   <p class={styles.groupHint}>
-                    Una skin es un conjunto de archivos <code>.txt</code> que sustituyen a las
-                    variables <code>--skin-*</code> de <code>global.css</code>.
+                    Cada tema cambia los colores y las formas de toda la aplicación. Se aplica
+                    al momento.
                   </p>
                   <ul class={styles.skinList}>
                     <li>
@@ -286,7 +314,7 @@ export function SettingsModal(props: SettingsModalProps) {
                       >
                         <span class={styles.skinCardCopy}>
                           <strong>Xenner</strong>
-                          <small>Base · claro y oscuro</small>
+                          <small>El original · claro y oscuro</small>
                         </span>
                         <Show when={props.activeSkin === ""}>
                           <span class={styles.check}>
@@ -308,10 +336,10 @@ export function SettingsModal(props: SettingsModalProps) {
                               <strong>{skin.name}</strong>
                               <small>
                                 {skin.origin === "user"
-                                  ? "Tuya"
+                                  ? "Creado por ti"
                                   : skin.author
-                                    ? `Del sistema · ${skin.author}`
-                                    : "Del sistema"}
+                                    ? `Incluido · ${skin.author}`
+                                    : "Incluido"}
                               </small>
                             </span>
                             <Show when={props.activeSkin === skin.id}>
@@ -329,9 +357,10 @@ export function SettingsModal(props: SettingsModalProps) {
 
               <Show when={section() === "create"}>
                 <div class={styles.group}>
-                  <h3 class={styles.groupTitle}>Creador de skins</h3>
+                  <h3 class={styles.groupTitle}>Crea un tema</h3>
                   <p class={styles.groupHint}>
-                    El resultado se guarda como TXT editable y no admite CSS arbitrario.
+                    Empieza de una paleta, ajusta lo que quieras y guárdalo con un nombre. Se
+                    añade a la lista de temas para que puedas usarlo cuando quieras.
                   </p>
                   <div class={styles.embed}>
                     <SkinCreator onCreated={props.onSkinCreated} />

@@ -27,7 +27,7 @@ export const SKIN_PALETTES: Record<ColorScheme, SkinPalette> = {
 };
 
 export const DEFAULT_SKIN_DRAFT: SkinDraft = {
-  name: "Mi skin",
+  name: "Mi tema",
   mode: "dark",
   ...SKIN_PALETTES.dark,
   radius: 12,
@@ -37,16 +37,21 @@ export const DEFAULT_SKIN_DRAFT: SkinDraft = {
   font: "system",
 };
 
+/**
+ * Colores del creador, nombrados por dónde se ven y no por su nombre técnico
+ * en CSS. Nada de "hover" o "superficie": quien crea un tema quiere saber qué
+ * parte de la pantalla va a cambiar.
+ */
 export const SKIN_COLOR_FIELDS: readonly { key: SkinColorKey; label: string }[] = [
-  { key: "background", label: "Fondo de la app" },
-  { key: "surface", label: "Superficie" },
-  { key: "panel", label: "Paneles" },
+  { key: "background", label: "Fondo" },
+  { key: "surface", label: "Notas y barras" },
+  { key: "panel", label: "Listado de notas" },
   { key: "text", label: "Texto" },
   { key: "textDim", label: "Texto suave" },
   { key: "border", label: "Bordes" },
-  { key: "accent", label: "Acento" },
-  { key: "hover", label: "Hover" },
-  { key: "active", label: "Selección" },
+  { key: "accent", label: "Enlaces y selección" },
+  { key: "hover", label: "Al pasar el ratón" },
+  { key: "active", label: "Elemento elegido" },
 ];
 
 export const SKIN_SHADOW_OPTIONS: readonly { value: SkinShadow; label: string }[] = [
@@ -55,12 +60,12 @@ export const SKIN_SHADOW_OPTIONS: readonly { value: SkinShadow; label: string }[
   { value: "strong", label: "Marcada" },
 ];
 
-export const SKIN_FONT_OPTIONS: readonly { value: string; label: string }[] = [
-  { value: "system", label: "Sistema" },
-  { value: "serif", label: "Editorial serif" },
-  { value: "mono", label: "Monoespaciada" },
-  { value: "rounded", label: "Redondeada" },
-  { value: "display", label: "Display" },
+export const SKIN_FONT_OPTIONS: readonly { value: string; label: string; font: string }[] = [
+  { value: "system", label: "Sistema", font: "" },
+  { value: "serif", label: "Serif", font: "Georgia, serif" },
+  { value: "mono", label: "Monoespaciada", font: "ui-monospace, Menlo, monospace" },
+  { value: "rounded", label: "Redondeada", font: 'ui-rounded, "SF Pro Rounded", sans-serif' },
+  { value: "display", label: "Display", font: '"Trebuchet MS", sans-serif' },
 ];
 
 export const SKIN_PRESETS: readonly SkinPreset[] = [

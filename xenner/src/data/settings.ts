@@ -19,8 +19,14 @@ export const THEME_MODES: readonly ThemeModeOption[] = [
   { id: "dark", label: "Oscuro" },
 ];
 
+/**
+ * Las secciones se nombran por lo que la persona quiere conseguir, no por cómo
+ * está construido por dentro. "Temas" y no "Skins", y sin mencionar archivos
+ * `.txt`, variables CSS ni tokens: eso va en la documentación, no en la
+ * interfaz.
+ */
 export const SETTINGS_SECTIONS: readonly SettingsNavigationItem[] = [
-  { id: "appearance", label: "Apariencia", hint: "Modo, tipografías y lectura" },
-  { id: "skins", label: "Skins", hint: "Instaladas y activas" },
-  { id: "create", label: "Crear skin", hint: "Paleta y estilo propios" },
+  { id: "appearance", label: "Aspecto", hint: "Cómo se ven tus notas" },
+  { id: "skins", label: "Temas", hint: "Elige el que más te guste" },
+  { id: "create", label: "Crear un tema", hint: "Un aspecto propio" },
 ];

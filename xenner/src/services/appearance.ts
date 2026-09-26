@@ -1,7 +1,8 @@
-import { FONT_OPTIONS } from "../data/appearance.ts";
+import { DEFAULT_APPEARANCE } from "../data/appearance.ts";
 import type { Appearance, ColorScheme } from "../types/appearance.ts";
 
 export type { Appearance, ColorScheme, ThemeMode } from "../types/appearance";
+export { DEFAULT_APPEARANCE };
 
 const STORAGE_KEY = "xenner:appearance:v1";
 const MIN_EDITOR_SIZE = 12;
@@ -10,15 +11,6 @@ const MIN_LINE_HEIGHT = 1.2;
 const MAX_LINE_HEIGHT = 2.2;
 const MIN_CONTENT_WIDTH = 560;
 const MAX_CONTENT_WIDTH = 1200;
-
-export const DEFAULT_APPEARANCE: Appearance = {
-  mode: "system",
-  uiFont: FONT_OPTIONS[0].value,
-  editorFont: FONT_OPTIONS[0].value,
-  editorSize: 16,
-  lineHeight: 1.7,
-  contentWidth: 860,
-};
 
 function safeFont(value: unknown, fallback: string): string {
   if (typeof value !== "string" || value.length > 160) return fallback;

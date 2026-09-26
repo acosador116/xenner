@@ -120,7 +120,16 @@ convierten en clases globales de aplicación.
 - `services/skinLoader.ts` mantiene la cadena de fallback y publica las claves
   `--skin-*` que define la skin activa como overrides inline; el resto lo
   resuelve `global.css`. No se movió el formato TXT.
-- `services/appearance.ts` conserva preferencias y variables de lectura.
+- `services/appearance.ts` conserva preferencias y variables de lectura. Los
+  valores con los que arranca Xenner viven en `data/appearance.ts`, porque son
+  datos estáticos: el servicio los usa para sanear lo guardado y el modal para
+  ofrecer «Restablecer» solo cuando algo se ha apartado de ellos.
+- El texto de la interfaz nunca habla de implementación. Ni `global.css`, ni
+  `--skin-*`, ni tokens, ni «Hover» o «Superficie»: en Ajustes el concepto de
+  skin se llama **tema** y los colores se nombran por dónde se ven («Notas y
+  barras», «Al pasar el ratón»). Lo técnico se queda en SKIN_SPEC.md. La regla
+  sale de los patrones de Ajustes: los labels nombran la preferencia y las
+  descripciones explican el resultado, nunca repiten la etiqueta.
 - `services/toastService.ts` contiene estado y timers; `ToastRegion` solo
   renderiza y coordina animaciones de layout.
 - `services/editorAssets.ts` es la única frontera usada por el editor para

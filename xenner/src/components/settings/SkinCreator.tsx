@@ -47,7 +47,7 @@ export function SkinCreator(props: SkinCreatorProps) {
       const skin = await createUserSkin(draft());
       props.onCreated(skin);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "No se pudo crear la skin");
+      setError(cause instanceof Error ? cause.message : "No se pudo crear el tema");
     } finally {
       setBusy(false);
     }
@@ -66,7 +66,7 @@ export function SkinCreator(props: SkinCreatorProps) {
           <span />
         </div>
         <div class={styles.previewEditor}>
-          <strong>{draft().name || "Mi skin"}</strong>
+          <strong>{draft().name || "Mi tema"}</strong>
           <div class={styles.previewNote}>
             <span />
             <i />
@@ -77,10 +77,10 @@ export function SkinCreator(props: SkinCreatorProps) {
 
       <section class={styles.creatorBlock}>
         <div class={styles.blockHeader}>
-          <strong>Identidad</strong>
+          <strong>Nombre</strong>
         </div>
         <label class={styles.nameControl} for="skin-name">
-          <span>Nombre de la skin</span>
+          <span>Cómo se llamará tu tema</span>
           <input
             id="skin-name"
             class={styles.nameInput}
@@ -94,7 +94,7 @@ export function SkinCreator(props: SkinCreatorProps) {
 
       <section class={styles.creatorBlock}>
         <div class={styles.blockHeader}>
-          <strong>Estilos rápidos</strong>
+          <strong>Empezar de una base</strong>
           <button type="button" class={styles.resetButton} onClick={() => setDraft({ ...DEFAULT_SKIN_DRAFT })}>
             Restablecer
           </button>
@@ -118,7 +118,7 @@ export function SkinCreator(props: SkinCreatorProps) {
       <section class={styles.creatorBlock}>
         <div class={styles.blockHeader}>
           <strong>Paleta</strong>
-          <div class={styles.modeSwitch} role="radiogroup" aria-label="Punto de partida">
+          <div class={styles.modeSwitch} role="radiogroup" aria-label="Punto de partida: claro u oscuro">
             <button
               type="button"
               class={draft().mode === "light" ? styles.active : undefined}
@@ -164,7 +164,7 @@ export function SkinCreator(props: SkinCreatorProps) {
         </div>
         <div class={styles.controlsGrid}>
           <label class={styles.rangeControl} for="skin-radius">
-            <span>Radio <output>{draft().radius}px</output></span>
+            <span>Redondeo <output>{draft().radius}px</output></span>
             <input
               id="skin-radius"
               type="range"
@@ -176,7 +176,7 @@ export function SkinCreator(props: SkinCreatorProps) {
             />
           </label>
           <label class={styles.rangeControl} for="skin-blur">
-            <span>Desenfoque <output>{draft().blur}px</output></span>
+            <span>Difuminado <output>{draft().blur}px</output></span>
             <input
               id="skin-blur"
               type="range"
@@ -188,7 +188,7 @@ export function SkinCreator(props: SkinCreatorProps) {
             />
           </label>
           <label class={styles.rangeControl} for="skin-border-width">
-            <span>Borde <output>{draft().borderWidth}px</output></span>
+            <span>Grosor del borde <output>{draft().borderWidth}px</output></span>
             <input
               id="skin-border-width"
               type="range"
@@ -212,14 +212,21 @@ export function SkinCreator(props: SkinCreatorProps) {
             </select>
           </label>
           <label class={styles.selectControl} for="skin-font">
-            <span>Tipografía</span>
+            <span>Tipografía de la interfaz</span>
             <select
               id="skin-font"
               value={draft().font}
               onChange={(event) => update("font", event.currentTarget.value)}
             >
               <For each={SKIN_FONT_OPTIONS}>
-                {(option) => <option value={option.value}>{option.label}</option>}
+                {(option) => (
+                  <option
+                    value={option.value}
+                    style={option.font ? `font-family: ${option.font}` : undefined}
+                  >
+                    {option.label}
+                  </option>
+                )}
               </For>
             </select>
           </label>
@@ -231,7 +238,7 @@ export function SkinCreator(props: SkinCreatorProps) {
       </Show>
       <div class={styles.actions}>
         <Button type="submit" variant="primary" disabled={busy()}>
-          {busy() ? "Creando…" : "Crear skin"}
+          {busy() ? "Creando…" : "Guardar tema"}
         </Button>
       </div>
     </form>

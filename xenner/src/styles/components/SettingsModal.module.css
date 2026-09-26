@@ -44,11 +44,12 @@
 }
 
 .section {
+  position: relative;
   display: flex;
   min-width: 0;
   flex-direction: column;
   gap: 1px;
-  padding: 9px 10px;
+  padding: 9px 10px 9px 13px;
   color: var(--skin-sidebar-text);
   background: transparent;
   border: 1px solid transparent;
@@ -68,6 +69,18 @@
 .sectionActive {
   color: var(--skin-note-accent);
   background-color: var(--skin-sidebar-itemActive);
+}
+
+/* Marca de sección activa que no depende solo del color. */
+.sectionActive::before {
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 4px;
+  width: 2px;
+  background-color: var(--skin-note-accent);
+  border-radius: 999px;
+  content: "";
 }
 
 .section:focus-visible {
@@ -106,30 +119,54 @@
 
 .header {
   display: flex;
-  min-height: 84px;
+  min-height: 72px;
   flex: 0 0 auto;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 18px 28px;
+  padding: 16px 24px 16px 28px;
   background-color: var(--skin-toolbar-background);
   border-bottom: var(--skin-toolbar-border);
 }
 
-.header p {
-  margin: 0;
-  color: var(--skin-toolbar-textDim);
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
 .header h2 {
-  margin: 3px 0 0;
+  margin: 0;
   color: var(--skin-toolbar-text);
-  font-size: 21px;
+  font-size: 20px;
   font-weight: 600;
   letter-spacing: -0.01em;
+}
+
+.headerActions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Solo aparece cuando algo se ha apartado de lo que trae Xenner. */
+.reset {
+  padding: 6px 10px;
+  color: var(--skin-toolbar-textDim);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--skin-button-radius);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease;
+}
+
+.reset:hover {
+  color: var(--skin-toolbar-text);
+  background-color: var(--skin-button-backgroundHover);
+}
+
+.reset:focus-visible {
+  outline: 2px solid var(--skin-input-focus);
+  outline-offset: 1px;
 }
 
 .scroll {
@@ -283,9 +320,18 @@
   background: var(--skin-note-accent);
 }
 
+.segmented button:disabled {
+  cursor: not-allowed;
+}
+
 .segmented button:focus-visible {
   outline: 2px solid var(--skin-input-focus);
   outline-offset: 1px;
+}
+
+/* Un control bloqueado no se esconde: se explica al lado por qué. */
+.segmented[aria-disabled="true"] {
+  opacity: 0.5;
 }
 
 /* El creador ya dibuja sus propios separadores; este respiro evita que el
