@@ -128,7 +128,12 @@ convierten en clases globales de aplicación.
 - `services/editorSession.ts` coordina el modo texto/pizarra, el autoguardado
   del whiteboard y la protección al cambiar de nota.
 - La pizarra es un nodo `whiteboard` de Milkdown con NodeView embebido en el
-  flujo de la nota. Se persiste como una imagen Markdown estándar bajo
+  flujo de la nota. El lienzo y la vista previa del dibujo comparten nodo, así
+  que `shouldShowDrawingPreview` (puro, en `editor/whiteboard.ts`) es la única
+  fuente de verdad de si la imagen se ve, y `WhiteboardNodeView.module.css`
+  necesita `.preview[hidden] { display: none }` explícito: el `display` de la
+  clase gana al `[hidden]` del navegador y sin él el lienzo se abriría debajo
+  del dibujo. Se persiste como una imagen Markdown estándar bajo
   `.assets/`; al cerrarse se muestra solo el dibujo, recortado a sus bounds,
   sin una pizarra vacía alrededor. Mientras se edita, el lienzo queda aislado
   del editor para que sus gestos no muevan la nota.

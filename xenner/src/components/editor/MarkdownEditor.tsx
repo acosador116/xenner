@@ -117,14 +117,15 @@ export function MarkdownEditor(props: MarkdownEditorProps) {
   }
 
   /**
-   * Deja el cursor en el párrafo que se acaba de crear tras el bloque y trae
-   * la vista al bloque insertado. Es una comodidad: si la posición no admite
-   * selección de texto, se conserva la que hubiera y nunca falla la inserción.
+   * Deja el cursor en el párrafo que se acaba de crear tras el bloque, para
+   * poder seguir escribiendo sin tabular. SIN `scrollIntoView()` a propósito:
+   * el bloque recién insertado es alto y un scroll mínimo desplaza la vista
+   * justo cuando la persona está mirando la línea desde la que insertó.
    */
   function settleAfterInsertion(view: EditorView): void {
     try {
       const near = TextSelection.near(view.state.selection.$to, 1);
-      view.dispatch(view.state.tr.setSelection(near).scrollIntoView());
+      view.dispatch(view.state.tr.setSelection(near));
     } catch {
       // El bloque ya está insertado; no vale la pena fallar por el cursor.
     }

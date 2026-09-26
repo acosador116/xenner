@@ -32,6 +32,11 @@
   font-weight: 500;
   font-size: 16px;
 }
+.dir {
+  color:var(--skin-note-text);
+  font-weight: 500;
+  font-size: 16px;
+}
 .loading {
   opacity: 0.58;
 }
@@ -40,8 +45,10 @@
   width: min(var(--skin-content-width, 860px), 100%);
   min-height: 100%;
   margin-inline: auto;
-  padding: clamp(42px, 6vw, 72px) 54px 132px;
+  margin-top: 20px;
+  padding: 10px 54px 132px;
   text-align: left;
+  border: var(--skin-note-border);
 }
 
 .heading {

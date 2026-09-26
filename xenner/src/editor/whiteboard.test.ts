@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  shouldShowDrawingPreview,
   transformWhiteboardAst,
   WHITEBOARD_CAPTION,
 } from "./whiteboard.ts";
@@ -56,4 +57,20 @@ test("no convierte imágenes normales, inline ni sources no locais", () => {
   assert.equal(tree.children[0].children[1].type, "image");
   assert.equal(tree.children[1].type, "paragraph");
   assert.equal(tree.children[1].children[0].type, "image");
+});
+
+test("la vista previa solo se ve con el lienzo cerrado y con contenido", () => {
+  const base = { editing: false, starting: false, hasContent: true };
+  assert.equal(shouldShowDrawingPreview(base), true, "dibujo guardado y cerrado");
+
+  // Editar un dibujo NO puede dejar su imagen encima: el lienzo se incrusta en
+  // el mismo nodo y aparecería por debajo en lugar de en su lugar.
+  assert.equal(shouldShowDrawingPreview({ ...base, editing: true }), false);
+  assert.equal(shouldShowDrawingPreview({ ...base, starting: true }), false);
+  // Un borrador recién creado no debe dejar un tablero en blanco de 320x200.
+  assert.equal(shouldShowDrawingPreview({ ...base, hasContent: false }), false);
+  assert.equal(
+    shouldShowDrawingPreview({ editing: true, starting: false, hasContent: false }),
+    false,
+  );
 });

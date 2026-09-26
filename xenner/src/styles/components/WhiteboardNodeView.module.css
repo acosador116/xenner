@@ -36,6 +36,15 @@
   vertical-align: top;
 }
 
+/*
+ * `display` de una clase gana al `[hidden] { display: none }` del navegador, así
+ * que sin esta regla el atributo no ocultaría nada y el lienzo se abriría DEBAJO
+ * del dibujo en vez de en su lugar. Hay que repetirlo aquí a propósito.
+ */
+.preview[hidden] {
+  display: none;
+}
+
 .preview img {
   display: block;
   width: auto;

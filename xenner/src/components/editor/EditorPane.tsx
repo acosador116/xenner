@@ -204,6 +204,13 @@ export function EditorPane(props: EditorPaneProps) {
     void insertImage(file);
   }
 
+  function getFather(path: string) {
+    let father = path.split("/");
+    father.pop()
+    
+    return father.concat(" / ")
+  }
+
   return (
     <main class={styles.pane} aria-label="Editor de nota">
       <Show
@@ -239,7 +246,7 @@ export function EditorPane(props: EditorPaneProps) {
                   <div class={styles.documentColumn}>
                     <div class={styles.heading}>
                       <div class={styles.headingMeta}>
-                        <span class={styles['path']} >{documentPath.split("/")?.pop()}</span>
+                        <span class={styles['path']} ><span class={styles["dir"]} >{getFather(documentPath)}</span> {documentPath.split("/").pop()}</span>
                         <span class={styles.saveStatus} role="status" aria-live="polite">
                           {visibleStatus(props.status)}
                         </span>

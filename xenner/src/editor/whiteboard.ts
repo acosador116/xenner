@@ -1,5 +1,26 @@
 export const WHITEBOARD_CAPTION = "xenner:pizarra";
 
+export interface DrawingPreviewVisibility {
+  /** El lienzo ya está montado. */
+  editing: boolean;
+  /** El lienzo se está abriendo (guarda asíncrona de otra pizarra). */
+  starting: boolean;
+  /** El SVG tiene al menos una figura. */
+  hasContent: boolean;
+}
+
+/**
+ * Si el nodo debe mostrar la imagen del dibujo o dejarla paso al lienzo.
+ *
+ * El editor se incrusta en el MISMO nodo que la vista previa, de modo que
+ * mostrarlas a la vez pone el lienzo DEBAJO del dibujo en vez de en su lugar.
+ * Regla: la imagen solo se ve con el editor cerrado y con algo que enseñar; un
+ * borrador recién creado no debe dejar un tablero en blanco de 320x200.
+ */
+export function shouldShowDrawingPreview(state: DrawingPreviewVisibility): boolean {
+  return !state.editing && !state.starting && state.hasContent;
+}
+
 interface MarkdownAstNode {
   type: string;
   url?: string;
