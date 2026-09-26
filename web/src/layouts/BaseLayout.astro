@@ -10,7 +10,7 @@ interface Props {
 
 const {
   title,
-  description = 'Xenner es un editor de notas minimalista y super customizable a tu gusto. Guarda las notas localmente.',
+  description = 'Xenner es un editor de notas desktop con la interfaz en archivos de texto plano. Skins TXT, biblioteca local de Markdown, sin cuentas ni nube.',
   image = '/og-xenner.png',
   noindex = false,
 } = Astro.props;
@@ -64,8 +64,9 @@ const structuredData = {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#ffffff" />
-    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0c0d11" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
     {noindex ? (
       <meta name="robots" content="noindex, nofollow" />
     ) : (

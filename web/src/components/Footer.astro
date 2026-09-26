@@ -10,115 +10,110 @@ const year = new Date().getFullYear();
   <div class="site-footer__inner">
     <div class="site-footer__brand">
       <Brand />
-      <p>Una ventana pequeña para ideas. Un archivo de texto para cambiar su mundo.</p>
+      <p>
+        Editor de notas desktop con la interfaz en archivos de texto plano. Tus notas son
+        archivos Markdown tuyos, en tu carpeta.
+      </p>
     </div>
 
-    <nav aria-label="Enlaces del pie">
-      <span class="site-footer__label">directorios</span>
-      <a href="#filosofia"><b>01</b> La idea</a>
-      <a href="#skins"><b>02</b> Sistema de skins</a>
-      <a href={specUrl} target="_blank" rel="noreferrer"><b>03</b> Especificación ↗</a>
-      <a href={sourceUrl} target="_blank" rel="noreferrer"><b>04</b> Código fuente ↗</a>
+    <nav class="site-footer__nav" aria-label="Producto">
+      <h2 class="site-footer__label">Producto</h2>
+      <ul>
+        <li><a href="#editor">El editor</a></li>
+        <li><a href="#skins">Sistema de skins</a></li>
+        <li><a href="#como-funciona">Cómo funciona</a></li>
+        <li><a href="#faq">Preguntas</a></li>
+      </ul>
     </nav>
 
-    <div class="site-footer__drive" aria-label="Información del proyecto">
-      <span class="site-footer__label">estado</span>
-      <p>0.1 · MIT<br />{year} / Local</p>
-      <a href="#inicio">↑ volver arriba</a>
-    </div>
+    <nav class="site-footer__nav" aria-label="Recursos">
+      <h2 class="site-footer__label">Recursos</h2>
+      <ul>
+        <li><a href={specUrl} target="_blank" rel="noreferrer">Especificación ↗</a></li>
+        <li><a href={`${sourceUrl}#issues`} target="_blank" rel="noreferrer">Issues ↗</a></li>
+        <li><a href={sourceUrl} target="_blank" rel="noreferrer">Código fuente ↗</a></li>
+      </ul>
+    </nav>
+  </div>
+
+  <div class="container site-footer__base">
+    <p>MIT · {year}</p>
+    <p>Hecho con Tauri, SolidJS, Rust y mucho texto plano.</p>
   </div>
 </footer>
 
 <style>
   .site-footer {
-    color: var(--text);
+    padding-top: var(--space-16);
     background: var(--bg-subtle);
     border-top: 1px solid var(--border);
   }
 
   .site-footer__inner {
-    width: min(calc(100% - var(--gutter) - var(--gutter)), var(--container));
-    margin: 0 auto;
-    padding: 3.5rem 0 2rem;
+    width: min(100% - var(--gutter) * 2, var(--container));
+    margin-inline: auto;
     display: grid;
-    grid-template-columns: 1.25fr 0.9fr 0.55fr;
-    align-items: start;
-    gap: 3rem;
+    grid-template-columns: 1.6fr 1fr 1fr;
+    gap: var(--space-10);
   }
 
   .site-footer__brand p {
-    max-width: 22rem;
-    margin: 1rem 0 0;
+    max-width: 24rem;
+    margin-top: var(--space-3);
     color: var(--text-secondary);
-    font-size: 0.875rem;
-    line-height: 1.7;
-  }
-
-  nav {
-    display: grid;
+    font-size: var(--text-sm);
+    line-height: var(--leading-relaxed);
   }
 
   .site-footer__label {
-    margin-bottom: 0.75rem;
+    margin-bottom: var(--space-3);
     color: var(--text-muted);
-    font-size: 0.75rem;
+    font-size: var(--text-xs);
     font-weight: 600;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
   }
 
-  nav a {
-    min-height: 2rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--text);
-    border-bottom: 1px solid var(--border);
-    font-size: 0.875rem;
-    text-decoration: none;
-    transition: color 150ms ease;
+  .site-footer__nav ul {
+    display: grid;
+    gap: var(--space-1);
+    list-style: none;
   }
 
-  nav a:hover {
-    color: var(--accent);
-  }
-
-  nav a b {
-    color: var(--text-muted);
-    font-size: 0.75rem;
-    font-weight: 500;
-  }
-
-  .site-footer__drive {
-    padding: 1rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--surface);
-  }
-
-  .site-footer__drive p {
-    margin: 0.75rem 0 0;
-    font-size: 0.875rem;
-    line-height: 1.7;
+  .site-footer__nav a {
+    display: block;
+    padding: var(--space-1) 0;
     color: var(--text-secondary);
-  }
-
-  .site-footer__drive a {
-    margin-top: 1rem;
-    color: var(--accent);
-    font-size: 0.875rem;
-    font-weight: 500;
+    font-size: var(--text-sm);
     text-decoration: none;
   }
 
-  .site-footer__drive a:hover {
+  .site-footer__nav a:hover {
+    color: var(--accent-text);
     text-decoration: underline;
+  }
+
+  .site-footer__base {
+    margin-top: var(--space-12);
+    padding: var(--space-5) 0 var(--space-8);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: var(--text-xs);
   }
 
   @media (max-width: 760px) {
     .site-footer__inner {
       grid-template-columns: 1fr;
-      gap: 2.5rem;
+      gap: var(--space-8);
+    }
+
+    .site-footer__base {
+      margin-top: var(--space-8);
     }
   }
 </style>
