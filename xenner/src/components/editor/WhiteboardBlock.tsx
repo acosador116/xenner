@@ -20,6 +20,8 @@ import {
   drawingShapeHits,
   drawingViewBox,
   MIN_PAPER_WIDTH,
+  rectFromTo,
+  rectOverlapsShape,
   normalizePaper,
   parseDrawingPaper,
   parseDrawingSvg,
@@ -62,10 +64,11 @@ interface ViewBox {
   height: number;
 }
 
+/** Arrastre de una o varias figuras a la vez. */
 interface DragState {
-  id: string;
+  ids: string[];
+  originals: DrawingShape[];
   start: Point;
-  original: DrawingShape;
   before: DrawingSnapshot;
   moved: boolean;
 }
@@ -140,21 +143,6 @@ interface DrawingSnapshot {
   paper: ShapeBounds;
 }
 
-/**
- * Punto del rastro del puntero, en fracción 0..1 de la zona visible del
- * lienzo. En fracción para que sobreviva al zoom y al paneo sin recalcular.
- */
-interface TrailPoint {
-  x: number;
-  y: number;
-}
-
-/** Puntos máximos del rastro: es una ayuda visual, no un registro. */
-const TRAIL_MAX_POINTS = 160;
-/** Separación mínima en fracción para no muestrear un punto por pixel. */
-const TRAIL_MIN_STEP = 0.004;
-/** Tiempo que el rastro sigue visible desvanaciéndose tras soltar. */
-const TRAIL_FADE_MS = 420;
 
 function defaultDrawingColor(): string {
   if (typeof document === "undefined") return DEFAULT_DRAWING_COLOR;
@@ -248,14 +236,13 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
   const [width, setWidth] = createSignal(initialShapes[0]?.width ?? 4);
   const [shapes, setShapes] = createSignal<DrawingShape[]>(initialShapes);
   const [paper, setPaper] = createSignal<ShapeBounds>(initialPaper);
-  const [selectedId, setSelectedId] = createSignal<string | null>(null);
+  const [selection, setSelection] = createSignal<string[]>([]);
+  const [marquee, setMarquee] = createSignal<ShapeBounds | null>(null);
   const [draft, setDraft] = createSignal<DrawingShape | null>(null);
   const [drag, setDrag] = createSignal<DragState | null>(null);
   const [resize, setResize] = createSignal<ResizeState | null>(null);
   const [pan, setPan] = createSignal<PanState | null>(null);
   const [paperDrag, setPaperDrag] = createSignal<PaperDragState | null>(null);
-  const [trail, setTrail] = createSignal<TrailPoint[]>([]);
-  const [trailFading, setTrailFading] = createSignal(false);
   const [undoStack, setUndoStack] = createSignal<DrawingSnapshot[]>([]);
   const [redoStack, setRedoStack] = createSignal<DrawingSnapshot[]>([]);
   const [saving, setSaving] = createSignal(false);
@@ -277,9 +264,16 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
   let expandedCanvasObserver: ResizeObserver | null = null;
   let styleBefore: DrawingSnapshot | null = null;
   let textBefore: DrawingSnapshot | null = null;
-  let trailTimer: ReturnType<typeof setTimeout> | null = null;
 
+  const selectedId = createMemo(() => selection()[selection().length - 1] ?? null);
   const selectedShape = createMemo(() => shapes().find((shape) => shape.id === selectedId()) ?? null);
+  const selectedShapes = createMemo(() => {
+    const ids = new Set(selection());
+    return shapes().filter((shape) => ids.has(shape.id));
+  });
+  const hasSelection = createMemo(() => selection().length > 0);
+  // Único caso con tiradores de tamaño: exactamente una figura elegida.
+  const singleSelection = createMemo(() => (selection().length === 1 ? selectedShape() : null));
   const zoomPercent = createMemo(() => Math.round((paper().width / view().width) * 100));
   // Mientras se edita un texto, su <text> del SVG se oculta: el input queda
   // encima y, si no, el mismo texto se veía dos veces superpuesto.
@@ -335,7 +329,6 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
     const move = (event: PointerEvent): void => {
       if (!paperDrag()) return;
       event.preventDefault();
-      recordTrail(event.clientX, event.clientY);
       resizePaperTo(event.clientX, event.clientY);
     };
     const end = (): void => finishPaperResize();
@@ -349,62 +342,7 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
     });
   });
 
-  onCleanup(() => {
-    expandedCanvasObserver?.disconnect();
-    if (trailTimer) clearTimeout(trailTimer);
-  });
-
-  // --- Rastro del puntero --------------------------------------------------
-  // Al arrastrar con el botón pulsado se dibuja la trayectoria recorrida: sin
-  // ella no hay forma de saber qué se está moviendo ni hacia dónde, que es lo
-  // que hace un escritorio. Es solo visual: nunca entra en el SVG ni en el undo.
-  function recordTrail(clientX: number, clientY: number): void {
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    if (rect.width <= 0 || rect.height <= 0) return;
-    const point = {
-      x: (clientX - rect.left) / rect.width,
-      y: (clientY - rect.top) / rect.height,
-    };
-    setTrail((previous) => {
-      const last = previous[previous.length - 1];
-      if (last && Math.hypot(point.x - last.x, point.y - last.y) < TRAIL_MIN_STEP) {
-        return previous;
-      }
-      return [...previous.slice(-(TRAIL_MAX_POINTS - 1)), point];
-    });
-  }
-
-  function beginTrail(clientX: number, clientY: number): void {
-    if (trailTimer) {
-      clearTimeout(trailTimer);
-      trailTimer = null;
-    }
-    setTrailFading(false);
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    if (rect.width <= 0 || rect.height <= 0) return;
-    setTrail([
-      {
-        x: (clientX - rect.left) / rect.width,
-        y: (clientY - rect.top) / rect.height,
-      },
-    ]);
-  }
-
-  function endTrail(): void {
-    if (trail().length < 2) {
-      setTrail([]);
-      return;
-    }
-    setTrailFading(true);
-    if (trailTimer) clearTimeout(trailTimer);
-    trailTimer = setTimeout(() => {
-      trailTimer = null;
-      setTrail([]);
-      setTrailFading(false);
-    }, TRAIL_FADE_MS);
-  }
+  onCleanup(() => expandedCanvasObserver?.disconnect());
 
   function capturePointer(event: PointerEvent): void {
     try {
@@ -491,7 +429,6 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
     event.preventDefault();
     event.stopPropagation();
     canvas?.focus({ preventScroll: true });
-    beginTrail(event.clientX, event.clientY);
     const point = pointFromEvent(event);
     const currentTool = tool();
     const resizeHandle = event.target instanceof Element
@@ -517,17 +454,28 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
     }
     if (currentTool === "select") {
       const hit = [...shapes()].reverse().find((shape) => drawingShapeHits(shape, point));
-      setSelectedId(hit?.id ?? null);
-      if (hit) {
-        setDrag({
-          id: hit.id,
-          start: point,
-          original: { ...hit, points: hit.points.map((item) => ({ ...item })) },
-          before: snapshot(),
-          moved: false,
-        });
+      if (!hit) {
+        // Clic en vacío con la herramienta de selección: el rectángulo marca el
+        // área, igual que en Paint. Lo que quede dentro se selecciona.
+        if (!event.shiftKey) setSelection([]);
+        setMarquee({ x: point.x, y: point.y, width: 0, height: 0 });
         capturePointer(event);
+        return;
       }
+      // Pulsar sobre una figura ya seleccionada arrastra el grupo entero.
+      const group = selection().includes(hit.id) ? selectedShapes() : [hit];
+      if (!selection().includes(hit.id)) setSelection([hit.id]);
+      setDrag({
+        ids: group.map((shape) => shape.id),
+        originals: group.map((shape) => ({
+          ...shape,
+          points: shape.points.map((item) => ({ ...item })),
+        })),
+        start: point,
+        before: snapshot(),
+        moved: false,
+      });
+      capturePointer(event);
       return;
     }
     if (currentTool === "text") {
@@ -539,7 +487,7 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
       const shape = createDrawingShape("text", point, color(), width());
       shape.text = "Texto";
       commit([...shapes(), shape]);
-      setSelectedId(shape.id);
+      setSelection([shape.id]);
       startTextEditor(shape);
       return;
     }
@@ -549,10 +497,9 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
   }
 
   function onPointerMove(event: PointerEvent): void {
-    if (!pan() && !resize() && !drag() && !draft()) return;
+    if (!pan() && !resize() && !drag() && !draft() && !marquee()) return;
     event.preventDefault();
     event.stopPropagation();
-    recordTrail(event.clientX, event.clientY);
     const activePan = pan();
     if (activePan) {
       const rect = canvas!.getBoundingClientRect();
@@ -593,12 +540,22 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
       const dy = point.y - activeDrag.start.y;
       if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
         setDrag({ ...activeDrag, moved: true });
-        setShapes((previous) =>
-          previous.map((shape) =>
-            shape.id === activeDrag.id ? moveShape(activeDrag.original, dx, dy) : shape,
-          ),
-        );
+        setShapes((previous) => {
+          // Cada figura se mueve desde SU posición original, no desde la
+          // actual: si no, arrastrar dos veces acumularía el desplazamiento.
+          const originals = new Map(activeDrag.originals.map((shape) => [shape.id, shape]));
+          return previous.map((shape) => {
+            const original = originals.get(shape.id);
+            return original ? moveShape(original, dx, dy) : shape;
+          });
+        });
       }
+      return;
+    }
+    const activeMarquee = marquee();
+    if (activeMarquee) {
+      const point = pointFromEvent(event);
+      setMarquee(rectFromTo(activeMarquee, point));
       return;
     }
     const activeDraft = draft();
@@ -615,7 +572,7 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
   function onPointerCancel(event: PointerEvent): void {
     event.preventDefault();
     event.stopPropagation();
-    endTrail();
+    setMarquee(null);
     const activeResize = resize();
     if (activeResize) {
       applySnapshot(activeResize.before);
@@ -631,12 +588,32 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
     releasePointer(event);
   }
 
+  /**
+   * Cierra el rectángulo de selección. Se seleccionan las figuras que TOCAN el
+   * área, como en un escritorio o en Miro, y se conservan las que ya estaban
+   * elegidas si se empezó con Shift.
+   */
+  function applyMarquee(): void {
+    const area = marquee();
+    setMarquee(null);
+    if (!area) return;
+    const inside = shapes()
+      .filter((shape) => rectOverlapsShape(area, shape))
+      .map((shape) => shape.id);
+    if (inside.length === 0) return;
+    setSelection([...new Set([...selection(), ...inside])]);
+  }
+
   function onPointerUp(event: PointerEvent): void {
     if (pan() || resize() || drag() || draft()) {
       event.preventDefault();
       event.stopPropagation();
     }
-    endTrail();
+    if (marquee()) {
+      releasePointer(event);
+      applyMarquee();
+      return;
+    }
     if (pan()) {
       releasePointer(event);
       setPan(null);
@@ -674,23 +651,23 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
       return;
     }
     commit([...shapes(), activeDraft]);
-    setSelectedId(activeDraft.id);
+    setSelection([activeDraft.id]);
     setDraft(null);
   }
 
   function deleteSelected(): void {
-    const id = selectedId();
-    if (!id) return;
-    commit(shapes().filter((shape) => shape.id !== id));
-    setSelectedId(null);
+    const ids = new Set(selection());
+    if (ids.size === 0) return;
+    commit(shapes().filter((shape) => !ids.has(shape.id)));
+    setSelection([]);
   }
 
   function duplicateSelected(): void {
-    const selected = selectedShape();
-    if (!selected) return;
-    const copy = duplicateShape(selected);
-    commit([...shapes(), copy]);
-    setSelectedId(copy.id);
+    const selected = selectedShapes();
+    if (selected.length === 0) return;
+    const copies = selected.map(duplicateShape);
+    commit([...shapes(), ...copies]);
+    setSelection(copies.map((shape) => shape.id));
   }
 
   function undo(): void {
@@ -700,7 +677,7 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
     setRedoStack((redo) => [...redo, snapshot()]);
     setUndoStack(history.slice(0, -1));
     applySnapshot(previous);
-    setSelectedId(null);
+    setSelection([]);
     markDirty();
   }
 
@@ -711,7 +688,7 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
     setUndoStack((undoHistory) => [...undoHistory, snapshot()]);
     setRedoStack(history.slice(0, -1));
     applySnapshot(next);
-    setSelectedId(null);
+    setSelection([]);
     markDirty();
   }
 
@@ -722,11 +699,11 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
   function updateSelectedStyle(nextColor: string, nextWidth: number): void {
     setColor(nextColor);
     setWidth(nextWidth);
-    const id = selectedId();
-    if (!id) return;
+    const ids = new Set(selection());
+    if (ids.size === 0) return;
     beginStyleChange();
     const next = shapes().map((shape) =>
-      shape.id === id ? { ...shape, color: nextColor, width: nextWidth } : shape,
+      ids.has(shape.id) ? { ...shape, color: nextColor, width: nextWidth } : shape,
     );
     setShapes(next);
     markDirty(next);
@@ -742,6 +719,7 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
 
   function chooseTool(nextTool: DrawingTool): void {
     if (textEdit()) finishTextEditor();
+    setMarquee(null);
     setTool(nextTool);
   }
 
@@ -775,7 +753,7 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
     if (edit.value.trim() === "") {
       const next = shapes().filter((shape) => shape.id !== edit.id);
       setShapes(next);
-      setSelectedId(null);
+      setSelection([]);
       ensureContentVisible(next);
       markDirty(next);
     }
@@ -786,7 +764,7 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
     if (!edit) return;
     if (textBefore) {
       applySnapshot(textBefore);
-      setSelectedId(null);
+      setSelection([]);
       markDirty();
       textBefore = null;
     }
@@ -800,7 +778,7 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
     const point = pointFromEvent(event as unknown as PointerEvent);
     const hit = [...shapes()].reverse().find((shape) => drawingShapeHits(shape, point));
     if (hit?.kind === "text") {
-      setSelectedId(hit.id);
+      setSelection([hit.id]);
       startTextEditor(hit);
     }
   }
@@ -844,7 +822,6 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
       anchor: paper(),
       before: snapshot(),
     });
-    beginTrail(event.clientX, event.clientY);
     const handle = event.currentTarget;
     try {
       if (handle instanceof Element) (handle as HTMLElement).setPointerCapture?.(event.pointerId);
@@ -923,12 +900,14 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
   }
 
   function nudgeSelected(event: KeyboardEvent): boolean {
-    const selected = selectedShape();
-    if (!selected || !["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return false;
+    if (!hasSelection() || !["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) {
+      return false;
+    }
     const amount = event.shiftKey ? 10 : 1;
     const dx = event.key === "ArrowLeft" ? -amount : event.key === "ArrowRight" ? amount : 0;
     const dy = event.key === "ArrowUp" ? -amount : event.key === "ArrowDown" ? amount : 0;
-    commit(shapes().map((shape) => (shape.id === selected.id ? moveShape(shape, dx, dy) : shape)));
+    const ids = new Set(selection());
+    commit(shapes().map((shape) => (ids.has(shape.id) ? moveShape(shape, dx, dy) : shape)));
     return true;
   }
 
@@ -957,6 +936,11 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
             event.preventDefault();
             cancelTextEditor();
           }
+          return;
+        }
+        if (event.key === "Escape" && marquee()) {
+          event.preventDefault();
+          setMarquee(null);
           return;
         }
         if (event.key === "Escape" && expanded() && !textEdit()) {
@@ -1055,13 +1039,13 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
         <div class={styles.toolbarActions}>
           <button type="button" disabled={undoStack().length === 0} onClick={undo} title="Deshacer (Ctrl+Z)">↶</button>
           <button type="button" disabled={redoStack().length === 0} onClick={redo} title="Rehacer (Ctrl+Shift+Z)">↷</button>
-          <button type="button" disabled={!selectedId()} onClick={duplicateSelected} aria-label="Duplicar figura" title="Duplicar (Ctrl+D)">
+          <button type="button" disabled={!hasSelection()} onClick={duplicateSelected} aria-label="Duplicar figura" title="Duplicar (Ctrl+D)">
             <CopyIcon />
           </button>
           <button
             type="button"
             class={styles.deleteButton}
-            disabled={!selectedId()}
+            disabled={!hasSelection()}
             onClick={deleteSelected}
             aria-label="Eliminar figura"
             title="Eliminar"
@@ -1158,19 +1142,40 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
               </>
             )}
           </Show>
-          <For each={shapes().filter((shape) => shape.id === selectedId())}>
+          {/* Cada figura elegida se resalta por separado, para que un grupo se
+              lea como varias piezas y no como una sola silueta. */}
+          <For each={selectedShapes()}>
             {(shape) => {
               const box = drawingShapeBounds(shape);
-              const handles = [
-                { id: "nw" as const, x: box.x - 12, y: box.y - 12 },
-                { id: "ne" as const, x: box.x + box.width + 4, y: box.y - 12 },
-                { id: "sw" as const, x: box.x - 12, y: box.y + box.height + 4 },
-                { id: "se" as const, x: box.x + box.width + 4, y: box.y + box.height + 4 },
-              ];
+              return (
+                <rect
+                  class={styles.selectionOutline}
+                  x={box.x - 8}
+                  y={box.y - 8}
+                  width={box.width + 16}
+                  height={box.height + 16}
+                  stroke={shape.color}
+                  pointer-events="none"
+                />
+              );
+            }}
+          </For>
+          {/* Los tiradores de tamaño solo con una única figura: estirar un grupo
+              exigiría decidir qué se mantiene fijo, y no está definido. */}
+          <Show when={singleSelection()}>
+            {(shape) => {
+              const handles = () => {
+                const current = drawingShapeBounds(shape());
+                return [
+                  { id: "nw" as const, x: current.x - 12, y: current.y - 12 },
+                  { id: "ne" as const, x: current.x + current.width + 4, y: current.y - 12 },
+                  { id: "sw" as const, x: current.x - 12, y: current.y + current.height + 4 },
+                  { id: "se" as const, x: current.x + current.width + 4, y: current.y + current.height + 4 },
+                ];
+              };
               return (
                 <>
-                  <rect x={box.x - 8} y={box.y - 8} width={box.width + 16} height={box.height + 16} fill="none" stroke={shape.color} stroke-width="2" stroke-dasharray="6 5" pointer-events="none" />
-                  <For each={handles}>
+                  <For each={handles()}>
                     {(handle) => (
                       <rect
                         data-resize-handle={handle.id}
@@ -1179,7 +1184,7 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
                         width="8"
                         height="8"
                         rx="2"
-                        fill={shape.color}
+                        fill={shape().color}
                         stroke="var(--skin-note-background)"
                         stroke-width="1"
                         pointer-events="all"
@@ -1189,21 +1194,20 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
                 </>
               );
             }}
-          </For>
-          </svg>
-          <Show when={trail().length > 1}>
-            <svg
-              class={`${styles.trail} ${trailFading() ? styles.trailFading : ""}`}
-              viewBox="0 0 1 1"
-              preserveAspectRatio="none"
-              aria-hidden="true"
-            >
-              <polyline
-                class={styles.trailLine}
-                points={trail().map((point) => `${point.x},${point.y}`).join(" ")}
-              />
-            </svg>
           </Show>
+          <Show when={marquee()}>
+            {(area) => (
+              <rect
+                class={styles.marquee}
+                x={area().x}
+                y={area().y}
+                width={area().width}
+                height={area().height}
+                pointer-events="none"
+              />
+            )}
+          </Show>
+          </svg>
           <Show when={textEdit()}>
           {(edit) => {
             const shape = () => shapes().find((candidate) => candidate.id === edit().id);

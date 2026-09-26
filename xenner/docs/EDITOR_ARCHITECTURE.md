@@ -175,6 +175,10 @@ declara; el resto lo resuelve el CSS según el modo activo.
 
 ### 7.3 Catálogo
 
+El modal de configuración tiene navegación lateral con una línea de descripción
+por sección, cabecera con eyebrow y cierre, y el contenido agrupado en tarjetas
+divididas por líneas. Todo sale de tokens `--skin-*`; ninguna clase fija color.
+
 El modal de configuración tendrá tres secciones:
 
 1. **Apariencia**

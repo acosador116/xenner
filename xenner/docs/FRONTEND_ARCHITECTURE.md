@@ -151,6 +151,14 @@ convierten en clases globales de aplicación.
   rastro del puntero en una capa `pointer-events: none` que se desvanece al
   soltar; nunca entra en el SVG ni en el historial de deshacer. Un clic en el
   dibujo marca el nodo como activo con un contorno, sin desplazar el layout.
+- La pizarra selecciona en grupo como en un escritorio: con la herramienta de
+  selección, arrastrar sobre el lienzo vacío dibuja un rectángulo (el lazo de
+  Paint) y marca las figuras que toca, criterio de Miro y Figma. Pulsar sobre
+  cualquier figura ya elegida arrastra el grupo entero; cada figura se mueve
+  desde su posición original para que el desplazamiento no se acumule. Borrar,
+  duplicar, recolorear y mover con flechas operan sobre toda la selección. Los
+  tiradores de tamaño solo aparecen con una única figura, porque estirar un
+  grupo exigiría decidir qué se mantiene fijo.
 - El papel del lienzo es redimensionable: la esquina inferior derecha arrastra
   el borde, y el rectángulo elegido se serializa como `width`/`height` +
   `viewBox` del propio SVG, así que sobrevive al guardado. El `viewBox` es la

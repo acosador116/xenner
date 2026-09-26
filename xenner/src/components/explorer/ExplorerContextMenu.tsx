@@ -54,7 +54,6 @@ export function ExplorerContextMenu(props: ExplorerContextMenuProps) {
     if (props.target.kind === "note") {
       return [
         { label: "Últimos cambios", action: () => props.onShowHistory(props.target.path) },
-        { separator: true, label: "" },
         { label: "Copiar Markdown", shortcut: "Ctrl+C", action: () => props.onCopyMarkdown(props.target.path) },
         { label: "Cortar para mover", shortcut: "Ctrl+X", action: () => props.onCut(props.target.path) },
         { label: "Renombrar", shortcut: "F2", action: () => props.onRename(props.target.path) },

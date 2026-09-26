@@ -9,6 +9,8 @@ import {
   drawingStage,
   drawingToDataUrl,
   normalizePaper,
+  rectFromTo,
+  rectOverlapsShape,
   serializeDrawing,
 } from "./drawing.ts";
 
@@ -95,4 +97,33 @@ test("el papel por defecto es el viewBox del contenido", () => {
   shape.x2 = 220;
   shape.y2 = 160;
   assert.deepEqual(drawingStage([shape]), { x: 104, y: 64, width: 132, height: 112 });
+});
+
+test("el rectángulo de selección sale positivo aunque se arrastre al revés", () => {
+  assert.deepEqual(rectFromTo({ x: 200, y: 150 }, { x: 100, y: 50 }), {
+    x: 100,
+    y: 50,
+    width: 100,
+    height: 100,
+  });
+  assert.deepEqual(rectFromTo({ x: 100, y: 50 }, { x: 200, y: 150 }), {
+    x: 100,
+    y: 50,
+    width: 100,
+    height: 100,
+  });
+});
+
+test("el rectángulo selecciona lo que toca, no solo lo que cabe dentro", () => {
+  const shape = createDrawingShape("rect", { x: 100, y: 100 }, "#123456", 4);
+  shape.x2 = 200;
+  shape.y2 = 200;
+
+  // El rectángulo cubre la figura entera.
+  assert.equal(rectOverlapsShape({ x: 50, y: 50, width: 250, height: 250 }, shape), true);
+  // Solo se solapa por una esquina: también entra, como en Miro o Figma.
+  assert.equal(rectOverlapsShape({ x: 180, y: 180, width: 100, height: 100 }, shape), true);
+  // Sin tocar: ni por un borde.
+  assert.equal(rectOverlapsShape({ x: 205, y: 205, width: 100, height: 100 }, shape), false);
+  assert.equal(rectOverlapsShape({ x: 0, y: 0, width: 50, height: 50 }, shape), false);
 });

@@ -188,8 +188,34 @@ export function parseDrawingPaper(svg: string): ShapeBounds | null {
   return normalizePaper({ x, y, width, height });
 }
 
-export function drawingShapeHits(shape: DrawingShape, point: Point): boolean {
-  if (shape.kind === "path") {
+/**
+ * Rectángulo de selección con origen y esquina opuestos. Se normaliza a tamaño
+ * positivo, para que arrastrar hacia arriba o hacia la izquierda funcione igual.
+ */
+export function rectFromTo(origin: Point, corner: Point): ShapeBounds {
+  return {
+    x: Math.min(origin.x, corner.x),
+    y: Math.min(origin.y, corner.y),
+    width: Math.abs(corner.x - origin.x),
+    height: Math.abs(corner.y - origin.y),
+  };
+}
+
+/**
+ * ¿El rectángulo toca la figura? Es el criterio de las pizarras (Miro, Figma):
+ * se selecciona lo que se roza, no solo lo que cabe entero dentro.
+ */
+export function rectOverlapsShape(rect: ShapeBounds, shape: DrawingShape): boolean {
+  const box = drawingShapeBounds(shape);
+  return (
+    box.x < rect.x + rect.width &&
+    box.x + box.width > rect.x &&
+    box.y < rect.y + rect.height &&
+    box.y + box.height > rect.y
+  );
+}
+
+export function drawingShapeHits(shape: DrawingShape, point: Point): boolean {  if (shape.kind === "path") {
     if (shape.points.length < 2) {
       return distanceToSegment(point, shape.points[0] ?? { x: shape.x1, y: shape.y1 }, { x: shape.x1, y: shape.y1 }) <= shape.width + 8;
     }
