@@ -127,17 +127,6 @@ export function seedNoteHistory(path: string, body: string, at = Date.now()): vo
   }
 }
 
-export function clearNoteHistory(path: string): void {
-  try {
-    const store = readStore();
-    if (!(path in store)) return;
-    delete store[path];
-    writeStore(store);
-  } catch {
-    // Borrar el historial nunca es crítico.
-  }
-}
-
 export function forgetNoteHistory(paths: readonly string[]): void {
   try {
     const store = readStore();

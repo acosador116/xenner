@@ -239,7 +239,7 @@ export function EditorPane(props: EditorPaneProps) {
                   <div class={styles.documentColumn}>
                     <div class={styles.heading}>
                       <div class={styles.headingMeta}>
-                        <span class={styles['path']} >{(documentPath.split("/"))}</span>
+                        <span class={styles['path']} >{documentPath.split("/")?.pop()}</span>
                         <span class={styles.saveStatus} role="status" aria-live="polite">
                           {visibleStatus(props.status)}
                         </span>

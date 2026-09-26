@@ -10,8 +10,9 @@ import {
   versionPreview,
 } from "../../workspace/history";
 import { Button } from "../ui/Button";
+import { IconButton } from "../ui/IconButton";
+import { CloseIcon } from "../ui/Icons";
 import { ModalBackdrop } from "../ui/ModalBackdrop";
-import { CloseIcon, RestoreIcon } from "../ui/Icons";
 
 export interface NoteHistoryPanelProps {
   notePath: string;
@@ -22,7 +23,6 @@ export interface NoteHistoryPanelProps {
   busy?: boolean;
   onClose(): void;
   onRestore(version: NoteVersion): void;
-  onForget(): void;
 }
 
 export function NoteHistoryPanel(props: NoteHistoryPanelProps) {
@@ -30,105 +30,85 @@ export function NoteHistoryPanel(props: NoteHistoryPanelProps) {
   // relativo no dependa de la identidad del array.
   const ordered = createMemo(() => [...props.versions].sort((a, b) => b.at - a.at));
   const isCurrent = (version: NoteVersion): boolean => version === ordered()[0];
-  let panel: HTMLElement | undefined;
+  let dialog: HTMLDivElement | undefined;
 
   // El menú contextual que abre este panel tenía el foco; sin recuperarlo el
   // Tab se iría al documento de fondo y Escape no llegaría al panel.
-  onMount(() => panel?.focus({ preventScroll: true }));
+  onMount(() => queueMicrotask(() => dialog?.focus()));
 
   return (
-    <ModalBackdrop class={styles.backdrop} onBackdropPointerDown={props.onClose}>
-      <section
-        ref={(element) => (panel = element)}
-        class={styles.panel}
+    <ModalBackdrop onBackdropPointerDown={props.onClose}>
+      <div
+        ref={(element) => (dialog = element)}
+        class={styles.modal}
         role="dialog"
         aria-modal="true"
         aria-labelledby="note-history-title"
-        tabIndex={-1}
+        tabindex={-1}
         onKeyDown={(event) => {
-          if (event.key === "Escape") {
-            event.preventDefault();
-            props.onClose();
-          }
+          if (event.key === "Escape") props.onClose();
         }}
       >
         <header class={styles.header}>
           <div>
+            <p title={props.notePath}>{props.noteName}</p>
             <h2 id="note-history-title">Últimos cambios</h2>
-            <p class={styles.subtitle} title={props.notePath}>{props.noteName}</p>
           </div>
-          <button
-            type="button"
-            class={styles.close}
-            aria-label="Cerrar el historial"
-            onClick={props.onClose}
-          >
+          <IconButton aria-label="Cerrar" onClick={props.onClose}>
             <CloseIcon />
-          </button>
+          </IconButton>
         </header>
 
-        <Show
-          when={ordered().length > 0}
-          fallback={
-            <p class={styles.empty}>
-              Todavía no hay cambios guardados de esta nota. El historial se llena solo
-              conforme se vaya guardando.
+        <div class={styles.content}>
+          <Show
+            when={ordered().length > 0}
+            fallback={
+              <p class={styles.notice}>
+                Todavía no hay versiones guardadas de esta nota. Se rellenan solas
+                conforme se vaya guardando.
+              </p>
+            }
+          >
+            <ul class={styles.list}>
+              <For each={ordered()}>
+                {(version, index) => {
+                  const previous = (): NoteVersion | null => ordered()[index() + 1] ?? null;
+                  return (
+                    <li class={styles.row}>
+                      <div class={styles.rowLabel}>
+                        <strong class={isCurrent(version) ? styles.current : undefined}>
+                          {isCurrent(version)
+                            ? "Actual"
+                            : formatVersionTime(version.at, props.now)}
+                        </strong>
+                        <small>{versionPreview(version.body) || "Nota vacía"}</small>
+                      </div>
+                      <div class={styles.rowActions}>
+                        <Show when={!isCurrent(version) && versionDelta(version, previous()) !== 0}>
+                          <output>{formatDelta(versionDelta(version, previous()))}</output>
+                        </Show>
+                        <Show when={!isCurrent(version)}>
+                          <Button
+                            disabled={props.busy}
+                            onClick={() => props.onRestore(version)}
+                            title="Volver a escribir este contenido en el archivo"
+                          >
+                            Restaurar
+                          </Button>
+                        </Show>
+                      </div>
+                    </li>
+                  );
+                }}
+              </For>
+            </ul>
+            <p class={styles.hint}>
+              Hasta {HISTORY_VERSIONS} versiones por nota. El archivo <code>.md</code>{" "}
+              sigue siendo la fuente de verdad.
             </p>
-          }
-        >
-          <ol class={styles.list}>
-            <For each={ordered()}>
-              {(version, index) => {
-                const previous = (): NoteVersion | null => ordered()[index() + 1] ?? null;
-                return (
-                  <li class={styles.entry}>
-                    <div class={styles.entryMeta}>
-                      <span class={styles.when}>
-                        {isCurrent(version) ? "Versión actual" : formatVersionTime(version.at, props.now)}
-                      </span>
-                      <Show when={!isCurrent(version) && versionDelta(version, previous()) !== 0}>
-                        <span class={styles.delta}>
-                          {formatDelta(versionDelta(version, previous()))}
-                        </span>
-                      </Show>
-                    </div>
-                    <p class={styles.preview}>
-                      {versionPreview(version.body) || "Nota vacía"}
-                    </p>
-                    <div class={styles.entryActions}>
-                      <Show
-                        when={!isCurrent(version)}
-                        fallback={<span class={styles.currentBadge}>Guardada</span>}
-                      >
-                        <Button
-                          disabled={props.busy}
-                          onClick={() => props.onRestore(version)}
-                          title="Escribir este contenido otra vez en el archivo"
-                        >
-                          <RestoreIcon /> Restaurar
-                        </Button>
-                      </Show>
-                    </div>
-                  </li>
-                );
-              }}
-            </For>
-          </ol>
-        </Show>
-
-        <footer class={styles.footer}>
-          <p class={styles.hint}>
-            Xenner guarda hasta {HISTORY_VERSIONS} versiones por nota. El archivo{" "}
-            <code>.md</code> sigue siendo la fuente de verdad.
-          </p>
-          <div class={styles.footerActions}>
-            <Button disabled={ordered().length === 0 || props.busy} onClick={props.onForget}>
-              Borrar historial
-            </Button>
-            <Button variant="primary" onClick={props.onClose}>Cerrar</Button>
-          </div>
-        </footer>
-      </section>
+          </Show>
+        </div>
+      </div>
     </ModalBackdrop>
   );
 }

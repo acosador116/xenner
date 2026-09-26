@@ -94,7 +94,6 @@ export default function App() {
             busy={history.busy()}
             onClose={history.close}
             onRestore={(version) => void history.restore(version)}
-            onForget={history.forget}
           />
         )}
       </Show>

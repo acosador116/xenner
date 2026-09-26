@@ -8,7 +8,6 @@ import {
 import { Portal } from "solid-js/web";
 
 import styles from "../../styles/components/ExplorerContextMenu.module.css";
-import { HistoryIcon } from "../ui/Icons";
 import type { CreationKind } from "./CreationRow";
 
 export type ExplorerContextKind = "note" | "directory" | "root";
@@ -24,7 +23,6 @@ interface MenuItem {
   shortcut?: string;
   danger?: boolean;
   disabled?: boolean;
-  icon?: typeof HistoryIcon;
   action?: () => void;
   separator?: boolean;
 }
@@ -55,11 +53,7 @@ export function ExplorerContextMenu(props: ExplorerContextMenuProps) {
   function items(): MenuItem[] {
     if (props.target.kind === "note") {
       return [
-        {
-          label: "Últimos cambios",
-          icon: HistoryIcon,
-          action: () => props.onShowHistory(props.target.path),
-        },
+        { label: "Últimos cambios", action: () => props.onShowHistory(props.target.path) },
         { separator: true, label: "" },
         { label: "Copiar Markdown", shortcut: "Ctrl+C", action: () => props.onCopyMarkdown(props.target.path) },
         { label: "Cortar para mover", shortcut: "Ctrl+X", action: () => props.onCut(props.target.path) },
@@ -201,7 +195,7 @@ export function ExplorerContextMenu(props: ExplorerContextMenuProps) {
                   item.action?.();
                 }}
               >
-                {item.icon ? <span class={styles.itemIcon}>{item.icon({})}</span> : null}                <span>{item.label}</span>
+                <span>{item.label}</span>
                 <ShowShortcut value={item.shortcut} />
               </button>
             )

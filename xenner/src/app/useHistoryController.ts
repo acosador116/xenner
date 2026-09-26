@@ -1,6 +1,6 @@
 import { createSignal } from "solid-js";
 
-import { clearNoteHistory, readNoteHistory } from "../services/noteHistory";
+import { readNoteHistory } from "../services/noteHistory";
 import { notifyError, notifySuccess } from "../services/toastService";
 import type { NoteVersion } from "../workspace/history";
 import { getWorkspace, restoreNoteBody } from "../workspace/store";
@@ -48,14 +48,6 @@ export function useHistoryController() {
     }
   }
 
-  function forget(): void {
-    const current = path();
-    if (!current) return;
-    clearNoteHistory(current);
-    setVersions([]);
-    notifySuccess("Historial borrado", "Los archivos .md no se han tocado");
-  }
-
   /** Nombre legible de la nota abierta en el historial. */
   function noteName(): string {
     const current = path();
@@ -65,5 +57,5 @@ export function useHistoryController() {
     return raw.replace(/\.md$/i, "");
   }
 
-  return { path, versions, busy, now, open, close, restore, forget, noteName, refresh };
+  return { path, versions, busy, now, open, close, restore, noteName };
 }

@@ -285,22 +285,3 @@ export function CloseIcon(props: IconProps) {
     </svg>
   );
 }
-
-export function HistoryIcon(props: IconProps) {
-  return (
-    <svg {...iconProps(props)}>
-      <path d="M3.5 9A9 9 0 1 1 3 12" />
-      <path d="M3 4.5V9h4.5" />
-      <path d="M12 7.5V12l3 2" />
-    </svg>
-  );
-}
-
-export function RestoreIcon(props: IconProps) {
-  return (
-    <svg {...iconProps(props)}>
-      <path d="M4 10a8 8 0 1 1 .8 4.5" />
-      <path d="M4 4.5V10h5" />
-    </svg>
-  );
-}
