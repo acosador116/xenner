@@ -12,6 +12,7 @@ import {
   drawingIdFromSvg,
   drawingViewBox,
   hasDrawingContent,
+  parseDrawingPaper,
   parseDrawingSvg,
 } from "../../editor/drawing";
 import { whiteboardNode } from "../../editor/whiteboard-node";
@@ -163,7 +164,9 @@ class WhiteboardNodeView implements NodeView {
     const src = typeof this.currentNode.attrs.src === "string" ? this.currentNode.attrs.src : "";
     const svg = src ? drawingFromDataUrl(src) : "";
     const shapes = svg ? parseDrawingSvg(svg) : [];
-    const view = drawingViewBox(shapes);
+    // Si la persona redimensionó el papel, la nota muestra ese papel y no el
+    // recorte ajustado al dibujo.
+    const view = parseDrawingPaper(svg) ?? drawingViewBox(shapes);
     const canRender = shapes.length > 0 || this.currentNode.attrs.draft;
     if (src && canRender) this.image.src = src;
     else this.image.removeAttribute("src");

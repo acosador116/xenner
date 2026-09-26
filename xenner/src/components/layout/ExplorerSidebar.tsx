@@ -36,6 +36,7 @@ export interface ExplorerSidebarProps {
   onCopyMarkdown(path: string): void;
   onCut(path: string): void;
   onPaste(parent: string): void;
+  onShowHistory(path: string): void;
 }
 
 export function ExplorerSidebar(props: ExplorerSidebarProps) {
@@ -168,6 +169,7 @@ export function ExplorerSidebar(props: ExplorerSidebarProps) {
             onCopyMarkdown={props.onCopyMarkdown}
             onCut={props.onCut}
             onPaste={props.onPaste}
+            onShowHistory={props.onShowHistory}
           />
         </Show>
       </div>

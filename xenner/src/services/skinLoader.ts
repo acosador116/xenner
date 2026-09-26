@@ -1,17 +1,21 @@
 // SkinEngine: carga la skin activa y la publica como variables CSS
-// `--skin-<componente>-<clave>` en :root.
+// `--skin-<componente>-<clave>` en el estilo inline de :root.
 //
-// Cadena de fallback POR CADA fichero:
+// La paleta base NO vive aquí: está en `src/styles/global.css` como tokens
+// `--skin-*` del modo claro y su variante oscura. Por cascada, este módulo
+// solo necesita escribir las claves que la skin define; el resto lo resuelve
+// el CSS. Así una skin parcial nunca deja un componente sin estilo y cambiar
+// de modo claro/oscuro no tiene que reescribir ninguna variable.
+//
+// Cadena de lectura POR CADA fichero:
 //   1) comandos Tauri (runtime desktop)
-//   2) bundle Vite de xenner/skins/**/*.txt (pnpm dev sin Tauri)
-//   3) DEFAULT_SKIN embebida
+//   2) skins creadas en el navegador (previsualización en localStorage)
+//   3) bundle Vite de xenner/skins/**/*.txt (pnpm dev sin Tauri)
 // Regla: loadSkin() nunca lanza excepción sin capturar.
 
 import { invoke } from "@tauri-apps/api/core";
 
-import type { ColorScheme } from "../types/appearance";
 import type { LoadedSkin, SkinComponent, SkinInfo } from "../types/skin";
-import { DEFAULT_SKINS, type SkinVars } from "../skin/defaultSkin";
 import {
   parseSkinComponent,
   parseSkinConfig,
@@ -162,7 +166,7 @@ async function readComponentText(
 let latestLoad = 0;
 const appliedVars = new Set<string>();
 
-function applyVars(vars: Record<string, SkinVars>): void {
+function applyVars(vars: Record<string, Record<string, string>>): void {
   const root = document.documentElement;
   for (const name of appliedVars) root.style.removeProperty(name);
   appliedVars.clear();
@@ -176,14 +180,13 @@ function applyVars(vars: Record<string, SkinVars>): void {
 }
 
 /**
- * Carga la skin activa (config.txt, o `preferredId` si se indicó) y aplica
- * sus variables CSS. Resolución por clave: skin activa → default embebida.
+ * Carga la skin activa (config.txt, o `preferredId` si se indicó) y publica
+ * sus variables CSS como overrides inline de :root. Las claves ausentes las
+ * resuelve `styles/global.css`, que además decide la paleta clara/oscura
+ * según `data-color-scheme`.
  * Cualquier fallo en cualquier nivel cae al siguiente; jamás propaga error.
  */
-export async function loadSkin(
-  preferredId?: string,
-  scheme: ColorScheme = "dark",
-): Promise<LoadedSkin> {
+export async function loadSkin(preferredId?: string): Promise<LoadedSkin> {
   const request = ++latestLoad;
 
   try {
@@ -207,33 +210,26 @@ export async function loadSkin(
     );
     if (request !== latestLoad) return { activeId, skins };
 
-    const vars: Record<string, SkinVars> = {};
+    const overrides: Record<string, Record<string, string>> = {};
     SKIN_COMPONENTS.forEach((component, index) => {
-      // Empezamos SIEMPRE por la default: una skin parcial solo sobreescribe
-      // las claves que define y el resto queda embebido.
-      const merged: SkinVars = { ...DEFAULT_SKINS[scheme][component] };
       const text = texts[index];
-      if (text !== null) Object.assign(merged, parseSkinComponent(component, text));
-      vars[component] = merged;
+      const parsed = text === null ? {} : parseSkinComponent(component, text);
+      if (Object.keys(parsed).length > 0) overrides[component] = parsed;
     });
-    applyVars(vars);
+    applyVars(overrides);
 
     if (activeId && !skins.some((skin) => skin.id === activeId)) {
       console.warn(
-        `[xenner] skin "${activeId}" no encontrada en scan: usando default embebida para claves ausentes`,
+        `[xenner] skin "${activeId}" no encontrada en scan: se usa global.css para las claves ausentes`,
       );
     }
     return { activeId, skins };
   } catch (error) {
     if (request !== latestLoad) return { activeId: preferredId ?? "", skins: [] };
 
-    console.warn("[xenner] loadSkin falló, se aplica default embebida:", error);
+    console.warn("[xenner] loadSkin falló, se conservan los tokens de global.css:", error);
     try {
-      const vars: Record<string, SkinVars> = {};
-      for (const component of SKIN_COMPONENTS) {
-        vars[component] = { ...DEFAULT_SKINS[scheme][component] };
-      }
-      applyVars(vars);
+      applyVars({});
     } catch {
       // Nunca propaga un error de skins al usuario.
     }

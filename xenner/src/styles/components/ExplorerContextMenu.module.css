@@ -22,8 +22,8 @@
   width: 100%;
   min-height: 30px;
   align-items: center;
-  justify-content: space-between;
-  gap: 18px;
+  justify-content: flex-start;
+  gap: 7px;
   padding: 5px 8px;
   color: var(--skin-note-text);
   background: transparent;
@@ -33,6 +33,27 @@
   font-size: 12px;
   text-align: left;
   cursor: pointer;
+}
+
+.item > span:first-of-type {
+  flex: 1;
+}
+
+.itemIcon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  color: var(--skin-toolbar-textDim);
+}
+
+.itemIcon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.item:hover .itemIcon,
+.item:focus-visible .itemIcon {
+  color: inherit;
 }
 
 .item:hover,

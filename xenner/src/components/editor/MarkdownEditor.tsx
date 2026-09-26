@@ -9,8 +9,9 @@ import {
   wrapInOrderedListCommand,
 } from "@milkdown/kit/preset/commonmark";
 import { createParagraphNear } from "@milkdown/kit/prose/commands";
-import { TextSelection } from "@milkdown/kit/prose/state";
-import { replaceAll } from "@milkdown/kit/utils";
+import { Plugin, PluginKey, TextSelection } from "@milkdown/kit/prose/state";
+import type { EditorView } from "@milkdown/kit/prose/view";
+import { $prose, replaceAll } from "@milkdown/kit/utils";
 import { imageBlockSchema } from "@milkdown/kit/component/image-block";
 import { createEffect, createSignal, onCleanup, onMount, Show } from "solid-js";
 
@@ -88,6 +89,59 @@ export function MarkdownEditor(props: MarkdownEditorProps) {
   };
   let insertWhiteboardCommand: ((tool: DrawingTool) => Promise<void>) | null = null;
   let insertingWhiteboard = false;
+  // Última posición del cursor de TEXTO conocida. Sin ella, insertar un bloque
+  // (pizarra o imagen) desde el dock caía al final de la nota cuando la
+  // selección era un NodeSelection o el editor aún no había recuperado el foco
+  // tras el clic en la barra.
+  let textCursorPos: number | null = null;
+
+  function rememberTextCursor(view: EditorView): void {
+    const { selection } = view.state;
+    if (!(selection instanceof TextSelection)) return;
+    if (!selection.$from.parent.isTextblock) return;
+    textCursorPos = selection.from;
+  }
+
+  // Recoloca la selección en el cursor de texto conocido. Es idempotente: si
+  // ya hay una selección de texto válida, no toca nada.
+  function restoreTextCursor(view: EditorView): void {
+    const { selection } = view.state;
+    if (selection instanceof TextSelection && selection.$from.parent.isTextblock) return;
+    if (textCursorPos === null) return;
+    const pos = Math.min(Math.max(textCursorPos, 0), view.state.doc.content.size);
+    try {
+      view.dispatch(view.state.tr.setSelection(TextSelection.near(view.state.doc.resolve(pos), 1)));
+    } catch {
+      // Una selección que ya no se puede reconstruir deja intacta la actual.
+    }
+  }
+
+  /**
+   * Deja el cursor en el párrafo que se acaba de crear tras el bloque y trae
+   * la vista al bloque insertado. Es una comodidad: si la posición no admite
+   * selección de texto, se conserva la que hubiera y nunca falla la inserción.
+   */
+  function settleAfterInsertion(view: EditorView): void {
+    try {
+      const near = TextSelection.near(view.state.selection.$to, 1);
+      view.dispatch(view.state.tr.setSelection(near).scrollIntoView());
+    } catch {
+      // El bloque ya está insertado; no vale la pena fallar por el cursor.
+    }
+    view.focus();
+  }
+
+  const textCursorTracker = $prose(
+    () =>
+      new Plugin({
+        key: new PluginKey("xennerTextCursor"),
+        view: () => ({
+          update: (view) => {
+            if (!disposed) rememberTextCursor(view);
+          },
+        }),
+      }),
+  );
 
   function captureTextSelection(): void {
     if (!crepe) return;
@@ -164,12 +218,16 @@ export function MarkdownEditor(props: MarkdownEditorProps) {
             draft: true,
             drawingId,
           });
+          const view = instance.editor.ctx.get(editorViewCtx);
+          // El dock no roba el foco, pero la importación del asset es async:
+          // recolocamos la selección justo antes de insertar para que la
+          // pizarra caiga donde estaba el cursor de texto.
+          restoreTextCursor(view);
           const commands = instance.editor.ctx.get(commandsCtx);
           const inserted = commands.call(addBlockTypeCommand.key, { nodeType: node });
           if (!inserted) throw new Error("No se pudo insertar el bloque de pizarra");
-          const view = instance.editor.ctx.get(editorViewCtx);
           createParagraphNear(view.state, view.dispatch);
-          view.focus();
+          settleAfterInsertion(view);
         } catch (error) {
           if (imported) {
             await deleteAssetForEditor(props.notePath, imported.relativePath).catch(() => undefined);
@@ -284,6 +342,7 @@ export function MarkdownEditor(props: MarkdownEditorProps) {
         .use(textColorMark)
         .use(whiteboardNode)
         .use(whiteboardRemark)
+        .use(textCursorTracker)
         .use(createWhiteboardView({
           onSave: async (svg, currentSrc, saveOptions) => {
             try {
@@ -339,6 +398,8 @@ export function MarkdownEditor(props: MarkdownEditorProps) {
           instance.editor.ctx.get(editorViewCtx).focus();
         },
         setBlockType(type) {
+          const view = instance.editor.ctx.get(editorViewCtx);
+          restoreTextCursor(view);
           const commands = instance.editor.ctx.get(commandsCtx);
           if (type === "paragraph") commands.call(turnIntoTextCommand.key);
           else if (type === "heading1") commands.call(wrapInHeadingCommand.key, 1);
@@ -347,7 +408,7 @@ export function MarkdownEditor(props: MarkdownEditorProps) {
           else if (type === "bullet") commands.call(wrapInBulletListCommand.key);
           else if (type === "ordered") commands.call(wrapInOrderedListCommand.key);
           else commands.call(wrapInBlockquoteCommand.key);
-          instance.editor.ctx.get(editorViewCtx).focus();
+          view.focus();
         },
         async insertWhiteboard(tool: DrawingTool) {
           await insertWhiteboard(tool);
@@ -355,6 +416,8 @@ export function MarkdownEditor(props: MarkdownEditorProps) {
         async insertAsset(dataUrl, relativePath, alt = "Imagen", revision) {
           prepared.replacements.set(dataUrl, relativePath);
           if (revision) prepared.revisions.set(dataUrl, revision);
+          const view = instance.editor.ctx.get(editorViewCtx);
+          restoreTextCursor(view);
           const commands = instance.editor.ctx.get(commandsCtx);
           const node = imageBlockSchema.type(instance.editor.ctx).create({
             src: dataUrl,
@@ -368,9 +431,8 @@ export function MarkdownEditor(props: MarkdownEditorProps) {
             prepared.revisions.delete(dataUrl);
             throw new Error("No se pudo insertar el bloque de imagen");
           }
-          const view = instance.editor.ctx.get(editorViewCtx);
           createParagraphNear(view.state, view.dispatch);
-          view.focus();
+          settleAfterInsertion(view);
         },
       });
       setReady(true);

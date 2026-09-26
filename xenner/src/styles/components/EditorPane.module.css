@@ -27,7 +27,11 @@
   scrollbar-gutter: stable;
   transition: opacity var(--motion-fast) ease;
 }
-
+.path {
+  color: var(--skin-toolbar-textDim);
+  font-weight: 500;
+  font-size: 16px;
+}
 .loading {
   opacity: 0.58;
 }

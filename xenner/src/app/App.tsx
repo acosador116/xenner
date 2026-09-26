@@ -4,6 +4,7 @@ import { ToastRegion } from "../components/feedback/ToastRegion";
 import { AppShell } from "../components/layout/AppShell";
 import { ExplorerSidebar } from "../components/layout/ExplorerSidebar";
 import { EditorPane } from "../components/editor/EditorPane";
+import { NoteHistoryPanel } from "../components/editor/NoteHistoryPanel";
 import { SettingsModal } from "../components/settings/SettingsModal";
 import {
   chooseWorkspace,
@@ -33,6 +34,7 @@ export default function App() {
   const controller = useAppController();
   const appearance = controller.appearance;
   const explorer = controller.explorer;
+  const history = controller.history;
 
   return (
     <AppShell>
@@ -65,6 +67,7 @@ export default function App() {
         onCopyMarkdown={(path) => void explorer.copyMarkdown(path)}
         onCut={(path) => explorer.cut(path)}
         onPaste={(parent) => void explorer.paste(parent)}
+        onShowHistory={history.open}
       />
 
       <EditorPane
@@ -80,6 +83,21 @@ export default function App() {
         onRetry={() => void retryPendingSave()}
         onReload={() => void reloadSelectedDocument()}
       />
+
+      <Show when={history.path()} keyed>
+        {(notePath) => (
+          <NoteHistoryPanel
+            notePath={notePath}
+            noteName={history.noteName()}
+            versions={history.versions()}
+            now={history.now()}
+            busy={history.busy()}
+            onClose={history.close}
+            onRestore={(version) => void history.restore(version)}
+            onForget={history.forget}
+          />
+        )}
+      </Show>
 
       <Show when={controller.settingsOpen()}>
         <SettingsModal

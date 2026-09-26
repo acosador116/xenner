@@ -1,18 +1,187 @@
 /*
  * Estilos globales de Xenner.
  *
- * Este archivo solo contiene reset, utilidades transversales y tokens
- * estructurales. Los colores y las superficies provienen de --skin-*; cada
- * componente mantiene sus estilos en un CSS Module.
+ * Este archivo es la ÚNICA fuente de verdad de los tokens visuales:
+ *
+ *   1. Tokens estructurales (z-index, motion, medidas de layout).
+ *   2. Tokens de lectura que escribe Apariencia (fuente, tamaño, ancho).
+ *   3. Tokens de skin `--skin-<componente>-<clave>` con la paleta base
+ *      embebida, en modo claro y su variante oscura.
+ *
+ * Cómo encaja el sistema de skins:
+ *
+ *   - Una skin TXT (`skins/<id>/<componente>.txt`) o el creador de Ajustes
+ *     NO redefinen este archivo. Escriben la variable concreta en el estilo
+ *     inline de <html> desde `services/skinLoader.ts`.
+ *   - El estilo inline gana por cascada, así que la clave de la skin manda y
+ *     las claves que la skin no define caen aquí.
+ *   - Cambiar de modo (claro/oscuro) solo conmuta `data-color-scheme`; no
+ *     reescribe variables.
+ *
+ * Consecuencia práctica: el frontend consume `var(--skin-*)` y nada más, y
+ * una skin parcial jamás deja un componente sin estilo. Los valores por
+ * defecto viven en `skins/glass-default/` y en las previsualizaciones de
+ * Ajustes, no aquí.
  */
 
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
+
+  /* ---------------------------------------------------------------- motion */
   --motion-fast: 120ms;
   --motion-standard: 140ms;
+
+  /* ------------------------------------------------------------------- z-index */
   --z-modal: 50;
   --z-drawing-modal: 70;
   --z-toast: 100;
+
+  /* ------------------------------------------------- tokens de lectura (Apariencia) */
+  --skin-ui-font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --skin-editor-font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --skin-editor-size: 16px;
+  --skin-editor-line-height: 1.7;
+  --skin-content-width: 860px;
+
+  /* ------------------------------------------------ skin · background (claro) */
+  --skin-background-background: #ffffff;
+  --skin-background-text: #2f2f2f;
+  --skin-background-textDim: #787774;
+  --skin-background-overlay: none;
+  --skin-background-border: 1px solid #e6e6e3;
+  --skin-background-radius: 0px;
+  --skin-background-blur: 0px;
+  --skin-background-shadow: none;
+  --skin-background-accent: #2383e2;
+  --skin-background-font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  /* ----------------------------------------------------- skin · button (claro) */
+  --skin-button-background: transparent;
+  --skin-button-backgroundHover: #f1f1ef;
+  --skin-button-text: #37352f;
+  --skin-button-textHover: #2f2f2f;
+  --skin-button-border: 1px solid transparent;
+  --skin-button-borderHover: #d9d9d7;
+  --skin-button-radius: 7px;
+  --skin-button-blur: 0px;
+  --skin-button-shadow: none;
+  --skin-button-accent: #2383e2;
+
+  /* ------------------------------------------------------- skin · note (claro) */
+  --skin-note-background: #ffffff;
+  --skin-note-backgroundHover: #f7f7f5;
+  --skin-note-text: #2f2f2f;
+  --skin-note-border: 1px solid #e6e6e3;
+  --skin-note-radius: 10px;
+  --skin-note-blur: 0px;
+  --skin-note-shadow: 0 8px 28px rgba(15, 15, 15, 0.1);
+  --skin-note-accent: #2383e2;
+
+  /* ---------------------------------------------------- skin · sidebar (claro) */
+  --skin-sidebar-background: #f7f7f5;
+  --skin-sidebar-text: #37352f;
+  --skin-sidebar-textDim: #787774;
+  --skin-sidebar-itemHover: #efefed;
+  --skin-sidebar-itemActive: #e7e7e4;
+  --skin-sidebar-border: 1px solid #e6e6e3;
+  --skin-sidebar-radius: 0px;
+  --skin-sidebar-blur: 0px;
+  --skin-sidebar-shadow: none;
+  --skin-sidebar-accent: #2383e2;
+
+  /* ------------------------------------------------------ skin · input (claro) */
+  --skin-input-background: #ffffff;
+  --skin-input-text: #2f2f2f;
+  --skin-input-placeholder: #9b9a97;
+  --skin-input-border: 1px solid #e3e2e0;
+  --skin-input-focus: #2383e2;
+  --skin-input-radius: 6px;
+  --skin-input-blur: 0px;
+  --skin-input-shadow: none;
+  --skin-input-accent: #2383e2;
+
+  /* ---------------------------------------------------- skin · toolbar (claro) */
+  --skin-toolbar-background: #ffffff;
+  --skin-toolbar-backgroundHover: #f1f1ef;
+  --skin-toolbar-text: #2f2f2f;
+  --skin-toolbar-textDim: #787774;
+  --skin-toolbar-border: 1px solid #e6e6e3;
+  --skin-toolbar-radius: 0px;
+  --skin-toolbar-blur: 0px;
+  --skin-toolbar-shadow: none;
+  --skin-toolbar-accent: #2383e2;
+}
+
+:root[data-color-scheme="dark"] {
+  color-scheme: dark;
+
+  /* ------------------------------------------------ skin · background (oscuro) */
+  --skin-background-background: #191919;
+  --skin-background-text: #e7e7e4;
+  --skin-background-textDim: #9b9b98;
+  --skin-background-overlay: none;
+  --skin-background-border: 1px solid #30302f;
+  --skin-background-radius: 0px;
+  --skin-background-blur: 0px;
+  --skin-background-shadow: none;
+  --skin-background-accent: #5b9bd5;
+  --skin-background-font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  /* ----------------------------------------------------- skin · button (oscuro) */
+  --skin-button-background: transparent;
+  --skin-button-backgroundHover: #2b2b2a;
+  --skin-button-text: #e7e7e4;
+  --skin-button-textHover: #ffffff;
+  --skin-button-border: 1px solid transparent;
+  --skin-button-borderHover: #464643;
+  --skin-button-radius: 7px;
+  --skin-button-blur: 0px;
+  --skin-button-shadow: none;
+  --skin-button-accent: #5b9bd5;
+
+  /* ------------------------------------------------------- skin · note (oscuro) */
+  --skin-note-background: #202020;
+  --skin-note-backgroundHover: #292928;
+  --skin-note-text: #e7e7e4;
+  --skin-note-border: #343432;
+  --skin-note-radius: 10px;
+  --skin-note-blur: 0px;
+  --skin-note-shadow: 0 10px 32px rgba(0, 0, 0, 0.28);
+  --skin-note-accent: #5b9bd5;
+
+  /* ---------------------------------------------------- skin · sidebar (oscuro) */
+  --skin-sidebar-background: #202020;
+  --skin-sidebar-text: #e7e7e4;
+  --skin-sidebar-textDim: #9b9b98;
+  --skin-sidebar-itemHover: #292928;
+  --skin-sidebar-itemActive: #343431;
+  --skin-sidebar-border: 1px solid #30302f;
+  --skin-sidebar-radius: 0px;
+  --skin-sidebar-blur: 0px;
+  --skin-sidebar-shadow: none;
+  --skin-sidebar-accent: #5b9bd5;
+
+  /* ------------------------------------------------------ skin · input (oscuro) */
+  --skin-input-background: #252525;
+  --skin-input-text: #e7e7e4;
+  --skin-input-placeholder: #858580;
+  --skin-input-border: 1px solid #3c3c39;
+  --skin-input-focus: #5b9bd5;
+  --skin-input-radius: 6px;
+  --skin-input-blur: 0px;
+  --skin-input-shadow: none;
+  --skin-input-accent: #5b9bd5;
+
+  /* ---------------------------------------------------- skin · toolbar (oscuro) */
+  --skin-toolbar-background: #202020;
+  --skin-toolbar-backgroundHover: #2b2b2a;
+  --skin-toolbar-text: #e7e7e4;
+  --skin-toolbar-textDim: #9b9b98;
+  --skin-toolbar-border: 1px solid #30302f;
+  --skin-toolbar-radius: 0px;
+  --skin-toolbar-blur: 0px;
+  --skin-toolbar-shadow: none;
+  --skin-toolbar-accent: #5b9bd5;
 }
 
 *,
@@ -37,7 +206,7 @@ body {
 
 body {
   overflow: hidden;
-  color: var(--skin-background-text);
+  color: var(--skin-note-text);
   font-family: var(--skin-ui-font, var(--skin-background-font));
   font-size: 16px;
   line-height: 24px;

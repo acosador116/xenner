@@ -1,4 +1,4 @@
-import { createEffect, createSignal, onCleanup, Show } from "solid-js";
+import { createEffect, createSignal, Show } from "solid-js";
 
 import {
   chooseImageForEditor,
@@ -19,7 +19,6 @@ import type {
   SaveStatus,
   VaultErrorShape,
 } from "../../types/workspace";
-import { baseName } from "../../utils/paths";
 import { NOTE_TITLE_MAX_LENGTH } from "../../workspace/note";
 import { Button } from "../ui/Button";
 import { NoteIcon, RefreshIcon } from "../ui/Icons";
@@ -68,12 +67,12 @@ export function EditorPane(props: EditorPaneProps) {
   const [editorReady, setEditorReady] = createSignal(false);
   const [whiteboardBusy, setWhiteboardBusy] = createSignal(false);
   const [titleDraft, setTitleDraft] = createSignal("");
+  const [titleFocused, setTitleFocused] = createSignal(false);
   let editorHandle: MarkdownEditorHandle | null = null;
   let imageInput: HTMLInputElement | undefined;
   let lastDocumentPath: string | undefined;
   let lastDocumentTitle: string | undefined;
   let titleCommitTask: Promise<void> = Promise.resolve();
-  let titleTimer: ReturnType<typeof setTimeout> | null = null;
 
   createEffect(() => {
     const document = props.document;
@@ -87,14 +86,10 @@ export function EditorPane(props: EditorPaneProps) {
     }
     lastDocumentPath = document.path;
     lastDocumentTitle = document.title;
-    setTitleDraft(document.title);
+    // Mientras se escribe el título manda el borrador: sincronizarlo aquí
+    // devolvía el valor guardado y el input se vaciaba a media palabra.
+    if (!titleFocused()) setTitleDraft(document.title);
   });
-
-  function clearTitleTimer(): void {
-    if (!titleTimer) return;
-    clearTimeout(titleTimer);
-    titleTimer = null;
-  }
 
   function commitTitle(): Promise<void> {
     const documentPath = props.document?.path;
@@ -122,16 +117,6 @@ export function EditorPane(props: EditorPaneProps) {
     titleCommitTask = task.catch(() => undefined);
     return task;
   }
-
-  function scheduleTitleCommit(): void {
-    clearTitleTimer();
-    titleTimer = setTimeout(() => {
-      titleTimer = null;
-      void commitTitle();
-    }, 500);
-  }
-
-  onCleanup(clearTitleTimer);
 
   function applyBlockType(type: EditorBlockType): void {
     if (!editorHandle || !editorReady() || props.loading) return;
@@ -254,7 +239,7 @@ export function EditorPane(props: EditorPaneProps) {
                   <div class={styles.documentColumn}>
                     <div class={styles.heading}>
                       <div class={styles.headingMeta}>
-                        <span>{baseName(documentPath)}</span>
+                        <span class={styles['path']} >{(documentPath.split("/"))}</span>
                         <span class={styles.saveStatus} role="status" aria-live="polite">
                           {visibleStatus(props.status)}
                         </span>
@@ -267,24 +252,22 @@ export function EditorPane(props: EditorPaneProps) {
                         maxlength={NOTE_TITLE_MAX_LENGTH}
                         spellcheck={false}
                         onInput={(event) => {
-                           setTitleDraft(event.currentTarget.value);
-                           scheduleTitleCommit();
-                         }}
+                          setTitleDraft(event.currentTarget.value);
+                        }}
+                        onFocus={() => setTitleFocused(true)}
                         onBlur={() => {
-                           clearTitleTimer();
-                           void commitTitle();
-                         }}
+                          setTitleFocused(false);
+                          void commitTitle();
+                        }}
                         onKeyDown={(event) => {
                           if (event.key === "Escape") {
                             event.preventDefault();
-                            clearTitleTimer();
                             setTitleDraft(props.document?.title ?? "");
                             event.currentTarget.blur();
                             return;
                           }
                           if (event.key !== "Enter") return;
                           event.preventDefault();
-                          clearTitleTimer();
                           void commitTitle().then(() => editorHandle?.focus());
                         }}
                       />

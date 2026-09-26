@@ -11,10 +11,12 @@ import {
 } from "../workspace/store";
 import { useAppearanceController } from "./useAppearanceController";
 import { useExplorerController } from "./useExplorerController";
+import { useHistoryController } from "./useHistoryController";
 
 export function useAppController() {
   const appearance = useAppearanceController();
   const explorer = useExplorerController();
+  const history = useHistoryController();
   const [settingsOpen, setSettingsOpen] = createSignal(false);
   let lastWorkspaceIssue = "";
   let lastLegacyIssue = "";
@@ -69,5 +71,5 @@ export function useAppController() {
     onCleanup(stopWatchingWorkspace);
   });
 
-  return { appearance, explorer, settingsOpen, setSettingsOpen };
+  return { appearance, explorer, history, settingsOpen, setSettingsOpen };
 }

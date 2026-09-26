@@ -229,6 +229,43 @@
   height: 100%;
 }
 
+/* Esquina inferior derecha del papel: arrastre para redimensionarlo. */
+.paperHandle {
+  position: absolute;
+  z-index: 3;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  cursor: nwse-resize;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.paperHandle span {
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid var(--skin-toolbar-textDim);
+  border-bottom: 2px solid var(--skin-toolbar-textDim);
+  border-bottom-right-radius: 3px;
+  opacity: 0.7;
+}
+
+.paperHandle:hover span,
+.paperHandle:focus-visible span,
+.paperHandleActive span {
+  border-color: var(--skin-toolbar-accent);
+  opacity: 1;
+}
+
+.paperHandle:focus-visible {
+  outline: 2px solid var(--skin-input-focus);
+  outline-offset: -2px;
+}
+
 .canvas {
   display: block;
   width: min(100%, 1000px);

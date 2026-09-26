@@ -19,11 +19,14 @@ import {
   drawingShapeBounds,
   drawingShapeHits,
   drawingViewBox,
+  MIN_PAPER_WIDTH,
+  normalizePaper,
+  parseDrawingPaper,
   parseDrawingSvg,
   serializeDrawing,
 } from "../../editor/drawing";
 import styles from "../../styles/components/WhiteboardBlock.module.css";
-import type { DrawingShape, DrawingTool, Point, ShapeKind } from "../../types/drawing";
+import type { DrawingShape, DrawingTool, Point, ShapeBounds, ShapeKind } from "../../types/drawing";
 import { Button } from "../ui/Button";
 import {
   ArrowIcon,
@@ -63,7 +66,7 @@ interface DragState {
   id: string;
   start: Point;
   original: DrawingShape;
-  before: DrawingShape[];
+  before: DrawingSnapshot;
   moved: boolean;
 }
 
@@ -73,6 +76,13 @@ interface PanState {
   view: ViewBox;
 }
 
+interface PaperDragState {
+  startX: number;
+  startY: number;
+  anchor: ShapeBounds;
+  before: DrawingSnapshot;
+}
+
 type ResizeHandle = "nw" | "ne" | "sw" | "se";
 
 interface ResizeState {
@@ -80,7 +90,7 @@ interface ResizeState {
   handle: ResizeHandle;
   start: Point;
   original: DrawingShape;
-  before: DrawingShape[];
+  before: DrawingSnapshot;
   moved: boolean;
 }
 
@@ -100,21 +110,14 @@ function ToolIcon(props: { tool: DrawingTool }) {
   return <TextIcon />;
 }
 
-const MIN_EDITOR_WIDTH = 320;
-const MIN_EDITOR_HEIGHT = 200;
-
 function clamp(value: number, minimum = 0, maximum = CANVAS_WIDTH): number {
   return Math.max(minimum, Math.min(maximum, value));
 }
 
-function editorViewForShapes(shapes: DrawingShape[]): { view: ViewBox; width: number; height: number } {
-  const bounds = drawingViewBox(shapes);
-  const width = clamp(bounds.width, MIN_EDITOR_WIDTH, CANVAS_WIDTH);
-  let height = Math.max(MIN_EDITOR_HEIGHT, (bounds.height / Math.max(1, bounds.width)) * width);
-  height = Math.min(CANVAS_HEIGHT, height);
-  const x = clamp(bounds.x + bounds.width / 2 - width / 2, 0, Math.max(0, CANVAS_WIDTH - width));
-  const y = clamp(bounds.y + bounds.height / 2 - height / 2, 0, Math.max(0, CANVAS_HEIGHT - height));
-  return { view: { x, y, width, height }, width, height };
+/** Normaliza el papel y devuelve a la vez su rectángulo visible. */
+function paperWithView(paper: ShapeBounds): { paper: ShapeBounds; view: ViewBox } {
+  const next = normalizePaper(paper);
+  return { paper: next, view: { x: next.x, y: next.y, width: next.width, height: next.height } };
 }
 
 function isDegenerateDraft(shape: DrawingShape): boolean {
@@ -129,6 +132,12 @@ function cloneShapes(shapes: DrawingShape[]): DrawingShape[] {
     ...shape,
     points: shape.points.map((point) => ({ ...point })),
   }));
+}
+
+/** Una entrada del historial: las figuras y el tamaño del papel. */
+interface DrawingSnapshot {
+  shapes: DrawingShape[];
+  paper: ShapeBounds;
 }
 
 function defaultDrawingColor(): string {
@@ -210,7 +219,11 @@ function duplicateShape(shape: DrawingShape): DrawingShape {
 
 export function WhiteboardBlock(props: WhiteboardBlockProps) {
   const initialShapes = parseDrawingSvg(props.initialSvg ?? "");
-  const initialEditor = editorViewForShapes(initialShapes);
+  // El papel sobrevive en el propio SVG: si la nota se guardó tras redimensionar,
+  // el lienzo vuelve a abrirse con ese tamaño en lugar de ajustarse al contenido.
+  const initialPaper = normalizePaper(
+    parseDrawingPaper(props.initialSvg ?? "") ?? drawingViewBox(initialShapes),
+  );
   const initialDrawingId = props.drawingId ?? createDrawingId();
   const [drawingId] = createSignal(initialDrawingId);
   const initialTool = isDrawingTool(props.initialTool) ? props.initialTool : "pen";
@@ -218,15 +231,22 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
   const [color, setColor] = createSignal(initialShapes[0]?.color ?? defaultDrawingColor());
   const [width, setWidth] = createSignal(initialShapes[0]?.width ?? 4);
   const [shapes, setShapes] = createSignal<DrawingShape[]>(initialShapes);
+  const [paper, setPaper] = createSignal<ShapeBounds>(initialPaper);
   const [selectedId, setSelectedId] = createSignal<string | null>(null);
   const [draft, setDraft] = createSignal<DrawingShape | null>(null);
   const [drag, setDrag] = createSignal<DragState | null>(null);
   const [resize, setResize] = createSignal<ResizeState | null>(null);
   const [pan, setPan] = createSignal<PanState | null>(null);
-  const [undoStack, setUndoStack] = createSignal<DrawingShape[][]>([]);
-  const [redoStack, setRedoStack] = createSignal<DrawingShape[][]>([]);
+  const [paperDrag, setPaperDrag] = createSignal<PaperDragState | null>(null);
+  const [undoStack, setUndoStack] = createSignal<DrawingSnapshot[]>([]);
+  const [redoStack, setRedoStack] = createSignal<DrawingSnapshot[]>([]);
   const [saving, setSaving] = createSignal(false);
-  const [view, setView] = createSignal<ViewBox>(initialEditor.view);
+  const [view, setView] = createSignal<ViewBox>({
+    x: initialPaper.x,
+    y: initialPaper.y,
+    width: initialPaper.width,
+    height: initialPaper.height,
+  });
   const [gridVisible, setGridVisible] = createSignal(true);
   const [expanded, setExpanded] = createSignal(false);
   const [textEdit, setTextEdit] = createSignal<TextEditState | null>(null);
@@ -237,11 +257,11 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
   let canvasStage: HTMLDivElement | undefined;
   let textInput: HTMLInputElement | undefined;
   let expandedCanvasObserver: ResizeObserver | null = null;
-  let styleBefore: DrawingShape[] | null = null;
-  let textBefore: DrawingShape[] | null = null;
+  let styleBefore: DrawingSnapshot | null = null;
+  let textBefore: DrawingSnapshot | null = null;
 
   const selectedShape = createMemo(() => shapes().find((shape) => shape.id === selectedId()) ?? null);
-  const zoomPercent = createMemo(() => Math.round((initialEditor.width / view().width) * 100));
+  const zoomPercent = createMemo(() => Math.round((paper().width / view().width) * 100));
 
   function fitExpandedCanvas(): void {
     if (!expanded() || !canvasWrap || !canvasStage) return;
@@ -254,7 +274,8 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
       1,
       canvasWrap.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom),
     );
-    const ratio = initialEditor.width / Math.max(1, initialEditor.height);
+    const current = paper();
+    const ratio = current.width / Math.max(1, current.height);
     const width = Math.max(1, Math.floor(Math.min(availableWidth, availableHeight * ratio)));
     canvasStage.style.width = `${width}px`;
     canvasStage.style.height = `${width / ratio}px`;
@@ -283,6 +304,26 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
   createEffect(() => {
     expanded();
     queueMicrotask(resetExpandedCanvasSize);
+  });
+
+  // El gesto de redimensionar el papel se escucha en el documento: el puntero
+  // puede acabar fuera de la esquina cuando se llega al límite del lienzo.
+  createEffect(() => {
+    if (!paperDrag()) return;
+    const move = (event: PointerEvent): void => {
+      if (!paperDrag()) return;
+      event.preventDefault();
+      resizePaperTo(event.clientX, event.clientY);
+    };
+    const end = (): void => finishPaperResize();
+    document.addEventListener("pointermove", move);
+    document.addEventListener("pointerup", end);
+    document.addEventListener("pointercancel", end);
+    onCleanup(() => {
+      document.removeEventListener("pointermove", move);
+      document.removeEventListener("pointerup", end);
+      document.removeEventListener("pointercancel", end);
+    });
   });
 
   onCleanup(() => expandedCanvasObserver?.disconnect());
@@ -326,7 +367,16 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
   }
 
   function currentSvg(nextShapes = shapes()): string {
-    return serializeDrawing(nextShapes, drawingId());
+    return serializeDrawing(nextShapes, drawingId(), paper());
+  }
+
+  function snapshot(): DrawingSnapshot {
+    return { shapes: cloneShapes(shapes()), paper: { ...paper() } };
+  }
+
+  function applySnapshot(next: DrawingSnapshot): void {
+    setShapes(next.shapes);
+    setPaper(next.paper);
   }
 
   function markDirty(next = shapes()): void {
@@ -348,7 +398,7 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
   }
 
   function commit(next: DrawingShape[]): void {
-    setUndoStack((previous) => [...previous, cloneShapes(shapes())]);
+    setUndoStack((previous) => [...previous, snapshot()]);
     setRedoStack([]);
     setShapes(next);
     ensureContentVisible(next);
@@ -375,7 +425,7 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
         handle: resizeHandle as ResizeHandle,
         start: point,
         original: { ...selected, points: selected.points.map((item) => ({ ...item })) },
-        before: cloneShapes(shapes()),
+        before: snapshot(),
         moved: false,
       });
       capturePointer(event);
@@ -394,7 +444,7 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
           id: hit.id,
           start: point,
           original: { ...hit, points: hit.points.map((item) => ({ ...item })) },
-          before: cloneShapes(shapes()),
+          before: snapshot(),
           moved: false,
         });
         capturePointer(event);
@@ -487,12 +537,12 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
     event.stopPropagation();
     const activeResize = resize();
     if (activeResize) {
-      setShapes(activeResize.before);
+      applySnapshot(activeResize.before);
       setResize(null);
     }
     const activeDrag = drag();
     if (activeDrag) {
-      setShapes(activeDrag.before);
+      applySnapshot(activeDrag.before);
       setDrag(null);
     }
     if (pan()) setPan(null);
@@ -565,26 +615,26 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
     const history = undoStack();
     const previous = history[history.length - 1];
     if (!previous) return;
-    setRedoStack((redo) => [...redo, cloneShapes(shapes())]);
+    setRedoStack((redo) => [...redo, snapshot()]);
     setUndoStack(history.slice(0, -1));
-    setShapes(previous);
+    applySnapshot(previous);
     setSelectedId(null);
-    markDirty(previous);
+    markDirty();
   }
 
   function redo(): void {
     const history = redoStack();
     const next = history[history.length - 1];
     if (!next) return;
-    setUndoStack((undoHistory) => [...undoHistory, cloneShapes(shapes())]);
+    setUndoStack((undoHistory) => [...undoHistory, snapshot()]);
     setRedoStack(history.slice(0, -1));
-    setShapes(next);
+    applySnapshot(next);
     setSelectedId(null);
-    markDirty(next);
+    markDirty();
   }
 
   function beginStyleChange(): void {
-    if (!styleBefore) styleBefore = cloneShapes(shapes());
+    if (!styleBefore) styleBefore = snapshot();
   }
 
   function updateSelectedStyle(nextColor: string, nextWidth: number): void {
@@ -614,7 +664,7 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
   }
 
   function startTextEditor(shape: DrawingShape): void {
-    textBefore = cloneShapes(shapes());
+    textBefore = snapshot();
     setTextEdit({ id: shape.id, value: shape.text });
     queueMicrotask(() => textInput?.focus({ preventScroll: true }));
   }
@@ -653,9 +703,9 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
     const edit = textEdit();
     if (!edit) return;
     if (textBefore) {
-      setShapes(textBefore);
+      applySnapshot(textBefore);
       setSelectedId(null);
-      markDirty(textBefore);
+      markDirty();
       textBefore = null;
     }
     setTextEdit(null);
@@ -675,13 +725,14 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
 
   function zoom(factor: number): void {
     const current = view();
-    const minimumWidth = Math.max(200, initialEditor.width / 2);
-    const maximumWidth = Math.min(CANVAS_WIDTH, Math.max(initialEditor.width * 2, CANVAS_WIDTH));
+    const base = paper();
+    const minimumWidth = Math.max(MIN_PAPER_WIDTH / 2, base.width / 2);
+    const maximumWidth = Math.min(CANVAS_WIDTH, Math.max(base.width * 2, CANVAS_WIDTH));
     let width = clamp(current.width / factor, minimumWidth, maximumWidth);
-    let height = width * (initialEditor.height / initialEditor.width);
+    let height = width * (base.height / base.width);
     if (height > CANVAS_HEIGHT) {
       height = CANVAS_HEIGHT;
-      width = Math.min(CANVAS_WIDTH, height * (initialEditor.width / initialEditor.height));
+      width = Math.min(CANVAS_WIDTH, height * (base.width / base.height));
     }
     const centerX = current.x + current.width / 2;
     const centerY = current.y + current.height / 2;
@@ -694,7 +745,83 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
   }
 
   function resetView(): void {
-    setView(initialEditor.view);
+    setView(paperWithView(paper()).view);
+  }
+
+  // --- Redimensionado del papel -------------------------------------------
+  // La esquina inferior derecha arrastra el borde del papel. El gesto vive
+  // fuera del <svg> para que ProseMirror y las herramientas de dibujo no lo
+  // interpreten como un trazo.
+  function startPaperResize(event: PointerEvent): void {
+    if (saving() || event.button !== 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    setPaperDrag({
+      startX: event.clientX,
+      startY: event.clientY,
+      anchor: paper(),
+      before: snapshot(),
+    });
+    const handle = event.currentTarget;
+    try {
+      if (handle instanceof Element) (handle as HTMLElement).setPointerCapture?.(event.pointerId);
+    } catch {
+      // Algunos WebView embebidos rechazan la captura; los handlers de
+      // pointermove del documento cierran el gesto igualmente.
+    }
+  }
+
+  function resizePaperTo(clientX: number, clientY: number): void {
+    const active = paperDrag();
+    if (!active || !canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+    const currentView = view();
+    const dx = ((clientX - active.startX) / rect.width) * currentView.width;
+    const dy = ((clientY - active.startY) / rect.height) * currentView.height;
+    const next = paperWithView({
+      x: active.anchor.x,
+      y: active.anchor.y,
+      width: active.anchor.width + dx,
+      height: active.anchor.height + dy,
+    });
+    setPaper(next.paper);
+    setView(next.view);
+    if (expanded()) fitExpandedCanvas();
+  }
+
+  /** Alternativa de teclado al arrastre de la esquina. */
+  function nudgePaper(event: KeyboardEvent): void {
+    const step = event.shiftKey ? 80 : 20;
+    const horizontal = event.key === "ArrowRight" ? step : event.key === "ArrowLeft" ? -step : 0;
+    const vertical = event.key === "ArrowDown" ? step : event.key === "ArrowUp" ? -step : 0;
+    if (horizontal === 0 && vertical === 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const current = paper();
+    const before = snapshot();
+    const next = paperWithView({
+      x: current.x,
+      y: current.y,
+      width: current.width + horizontal,
+      height: current.height + vertical,
+    });
+    setPaper(next.paper);
+    setView(next.view);
+    setUndoStack((previous) => [...previous, before]);
+    setRedoStack([]);
+    markDirty();
+  }
+
+  function finishPaperResize(): void {
+    const active = paperDrag();
+    if (!active) return;
+    setPaperDrag(null);
+    const next = paper();
+    if (next.width === active.anchor.width && next.height === active.anchor.height) return;
+    setUndoStack((previous) => [...previous, active.before]);
+    setRedoStack([]);
+    markDirty();
   }
 
   function moveToolFocus(event: KeyboardEvent, container: HTMLElement): void {
@@ -885,7 +1012,7 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
         <div
           ref={(element) => (canvasStage = element)}
           class={styles.canvasStage}
-          style={`--canvas-editor-width: ${initialEditor.width}px; --canvas-editor-ratio: ${initialEditor.width} / ${initialEditor.height};`}
+          style={`--canvas-editor-width: ${paper().width}px; --canvas-editor-ratio: ${paper().width} / ${paper().height};`}
         >
           <svg
             ref={(element) => (canvas = element)}
@@ -1014,6 +1141,19 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
               />
             );
           }}
+          </Show>
+          <Show when={!textEdit()}>
+            <div
+              class={`${styles.paperHandle} ${paperDrag() ? styles.paperHandleActive : ""}`}
+              role="button"
+              tabIndex={saving() ? -1 : 0}
+              aria-label="Redimensionar el papel"
+              title="Arrastra o usa las flechas para cambiar el tamaño del papel"
+              onPointerDown={startPaperResize}
+              onKeyDown={nudgePaper}
+            >
+              <span aria-hidden="true" />
+            </div>
           </Show>
         </div>
         <Show when={saving()}>

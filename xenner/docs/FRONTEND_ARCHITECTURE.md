@@ -14,13 +14,13 @@ src/
   editor/              dominio puro: rutas, color, figuras y drawings
   notes/               modelo y compatibilidad legacy
   services/            Tauri, localStorage, assets, apariencia y notificaciones
-  skin/                parser y skin base embebida
+  skin/                parser del formato TXT y catálogo de paletas
   styles/
-    global.css         reset, html/body y tokens globales
+    global.css         reset, html/body y TODOS los tokens
     components/*.module.css
   types/               contratos compartidos sin dependencias de runtime
   utils/               funciones auxiliares sin estado
-  workspace/           estado, persistencia Markdown, árbol y note format
+  workspace/           estado, persistencia Markdown, árbol, note format e historial
 ```
 
 `src/index.tsx` solo monta la aplicación e importa `styles/global.css`.
@@ -58,9 +58,23 @@ Contiene exclusivamente:
 - `.sr-only`;
 - estado global `disabled`;
 - reduced motion;
-- tokens estructurales como z-index y duraciones.
+- **todos los tokens**: los estructurales (z-index, duraciones), los de lectura
+  que escribe Apariencia (`--skin-editor-size`, `--skin-content-width`, …) y la
+  paleta base `--skin-<componente>-<clave>` en modo claro y su variante
+  `:root[data-color-scheme="dark"]`.
 
-No contiene selectores de componentes ni una paleta estática `--skin-*`.
+No contiene selectores de componentes.
+
+`global.css` es la única fuente de verdad de la paleta. Un TXT de skin o el
+creador de Ajustes no redefinen el bloque: escriben la variable concreta en el
+estilo inline de `<html>`, que gana por cascada. Por eso:
+
+- una skin parcial nunca deja un componente sin estilo, sin código de mezcla que
+  mantenga una segunda copia de la paleta en TypeScript;
+- cambiar de modo claro/oscuro es conmutar `data-color-scheme` y no releer ningún
+  TXT;
+- el frontend consume `var(--skin-*)` y nada más. Si un componente necesita un
+  color, se declara aquí y se puede sobreescribir desde una skin.
 
 ### CSS Modules
 
@@ -83,12 +97,29 @@ convierten en clases globales de aplicación.
 
 - `workspace/store.ts` conserva el estado reactivo y la cola de autoguardado; el
   nombre del archivo es la fuente del título y el input superior lo renombra.
+  El título se renombra al perder el foco del input, nunca en cada pulsación:
+  renombrar reescribe el archivo y una recarga por palabra se sentía rota.
 - El explorer usa drag-and-drop para mover entradas y un menú contextual para
-  copiar Markdown, cortar/pegar, renombrar, crear y eliminar.
+  copiar Markdown, cortar/pegar, renombrar, crear, eliminar y abrir
+  **Últimos cambios** de una nota.
+- `workspace/history.ts` es el dominio puro del historial (coalescencia de
+  guardados, límites y etiquetas relativas) y `services/noteHistory.ts` su
+  persistencia en `localStorage`. `store.ts` registra una versión por guardado
+  confirmado y expone `restoreNoteBody`, que antes de escribir vuelve a
+  registrar el cuerpo actual: revertir también se puede revertir.
+- El dock flotante del editor nunca roba el foco al `contenteditable`
+  (`preventDefault` en `mousedown`). Gracias a eso el cursor de texto sobrevive
+  al clic y los bloques insertados (pizarra, imagen) caen donde se estaba
+  escribiendo. `MarkdownEditor` además recuerda la última posición de cursor
+  válida y la repone antes de insertar, por si la selección fuese un
+  `NodeSelection`.
+- El hueco por debajo del texto de la columna devuelve el foco al editor al
+  pulsarlo, en lugar de dejar el cursor en el aire.
 - `services/workspace/` separa selección de gateway, adaptador Tauri, preview
   browser, estado preview y normalización de errores.
-- `services/skinLoader.ts` mantiene la cadena de fallback y publica variables
-  `--skin-*`; no se movió el formato TXT.
+- `services/skinLoader.ts` mantiene la cadena de fallback y publica las claves
+  `--skin-*` que define la skin activa como overrides inline; el resto lo
+  resuelve `global.css`. No se movió el formato TXT.
 - `services/appearance.ts` conserva preferencias y variables de lectura.
 - `services/toastService.ts` contiene estado y timers; `ToastRegion` solo
   renderiza y coordina animaciones de layout.
@@ -101,6 +132,11 @@ convierten en clases globales de aplicación.
   `.assets/`; al cerrarse se muestra solo el dibujo, recortado a sus bounds,
   sin una pizarra vacía alrededor. Mientras se edita, el lienzo queda aislado
   del editor para que sus gestos no muevan la nota.
+- El papel del lienzo es redimensionable: la esquina inferior derecha arrastra
+  el borde, y el rectángulo elegido se serializa como `width`/`height` +
+  `viewBox` del propio SVG, así que sobrevive al guardado. El `viewBox` es la
+  unión de papel y contenido para que redimensionar nunca recorte una figura, y
+  el historial de deshacer/rehacer de la pizarra incluye el tamaño del papel.
 - `BlockEdit` de Crepe proporciona el `+` contextual y el menú slash; el dock de
   Solid empieza por el selector de texto y deja imagen y pizarra como
   inserciones opcionales. El dock se oculta mientras una pizarra está activa.
