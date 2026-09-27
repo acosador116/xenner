@@ -10,7 +10,7 @@ interface Props {
 
 const {
   title,
-  description = 'Xenner es un editor de notas desktop con la interfaz en archivos de texto plano. Skins TXT, biblioteca local de Markdown, sin cuentas ni nube.',
+  description = 'Xenner es un editor de notas de escritorio que trabaja sobre una carpeta de Markdown. Pizarra, temas propios e historial de cambios. Sin cuentas, sin nube y sin telemetría.',
   image = '/og-xenner.png',
   noindex = false,
 } = Astro.props;
@@ -40,6 +40,7 @@ const structuredData = {
       isAccessibleForFree: true,
       license: 'https://opensource.org/license/mit',
       codeRepository: 'https://github.com/acosador116/xenner',
+      sameAs: ['https://github.com/acosador116/xenner'],
       image: {
         '@type': 'ImageObject',
         url: socialImageURL.href,
@@ -64,9 +65,11 @@ const structuredData = {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0c0d11" media="(prefers-color-scheme: dark)" />
-    <meta name="color-scheme" content="light dark" />
+    <!-- La web es de papel claro siempre (ver :root en global.css). Anunciar
+         soporte de oscuro hacía que la barra del navegador se pusiera oscura
+         sobre una página clara. -->
+    <meta name="theme-color" content="#fbfaf8" />
+    <meta name="color-scheme" content="light" />
     {noindex ? (
       <meta name="robots" content="noindex, nofollow" />
     ) : (
@@ -88,12 +91,12 @@ const structuredData = {
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:type" content="image/png" />
-    <meta property="og:image:alt" content="Xenner con una interfaz minimalista construida mediante archivos de skin TXT" />
+    <meta property="og:image:alt" content="Xenner, editor de notas que trabaja sobre una carpeta de Markdown" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={socialImageURL} />
-    <meta name="twitter:image:alt" content="Xenner con una interfaz minimalista construida mediante archivos de skin TXT" />
+    <meta name="twitter:image:alt" content="Xenner, editor de notas que trabaja sobre una carpeta de Markdown" />
 
     <title>{pageTitle}</title>
     {!noindex && <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />}

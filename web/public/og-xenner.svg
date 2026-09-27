@@ -1,65 +1,84 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-  <defs>
-    <pattern id="grid" width="54" height="30" patternUnits="userSpaceOnUse">
-      <path d="M54 0H0V30" fill="none" stroke="#d9ff39" stroke-opacity=".42" stroke-width="2"/>
-    </pattern>
-    <pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse">
-      <path d="M0 3.5H4" stroke="#111018" stroke-opacity=".28"/>
-    </pattern>
-  </defs>
+  <!--
+    Imagen social de Xenner con la MISMA identidad que el sitio: papel #fbfaf8,
+    tinta #191917 y el acento azul #2383e2 de la skin base clara de la app.
+    La anterior usaba morado y verde neón, que no aparecían en ningún otro sitio
+    del proyecto.
 
-  <path fill="#5932b5" d="M0 0h1200v630H0z"/>
-  <path fill="#24144c" d="M0 360 135 245l84 83 115-142 93 125 91-72 105 104 106-182 91 154 83-83 103 84 94-126 100 90v350H0z"/>
-  <path fill="#d9ff39" d="M0 443h1200v187H0z"/>
-  <path fill="url(#grid)" d="M0 443h1200v187H0z"/>
-
-  <circle cx="956" cy="118" r="205" fill="#d9ff39" stroke="#111018" stroke-width="5"/>
-  <path fill="#5932b5" fill-opacity=".65" d="M751 161h410v11H751zm0 31h410v11H751zm0 31h410v11H751zm0 31h410v11H751z"/>
-  <circle cx="956" cy="118" r="205" fill="none" stroke="#111018" stroke-width="5"/>
-
-  <g transform="translate(62 51)">
-    <path fill="#ff2a8f" d="M0 0h34v34H0z"/>
-    <path fill="#111018" d="M5 5h7v7H5zm17 0h7v7h-7zM12 12h8v8h-8zM5 22h7v7H5zm17 0h7v7h-7z"/>
-    <path fill="#d9ff39" d="M12 5h10v4H12zM12 25h10v4H12zM5 12h4v10H5zM25 12h4v10h-4z"/>
-    <text x="47" y="26" fill="#fff8dc" font-family="DejaVu Sans Mono,monospace" font-size="25" font-weight="700" letter-spacing="2">XENNER</text>
+    Las fuentes son las que existen en el entorno de generación (DejaVu), con
+    genéricas como reserva para que el SVG siga leyéndose en cualquier visor.
+  -->
+  <g>
+    <path fill="#fbfaf8" d="M0 0h1200v630H0z"/>
+    <path fill="#ffffff" d="M0 0h1200v410H0z"/>
+    <path fill="#e7e4de" d="M0 409h1200v2H0z"/>
   </g>
 
-  <text x="62" y="194" fill="#fff8dc" font-family="DejaVu Sans, Arial, sans-serif" font-size="79" font-weight="900" letter-spacing="-3">UN TXT.</text>
-  <text x="62" y="270" fill="#d9ff39" font-family="DejaVu Sans, Arial, sans-serif" font-size="62" font-weight="900" letter-spacing="-3">OTRA INTERFAZ.</text>
-  <text x="66" y="318" fill="#fff8dc" font-family="DejaVu Sans Mono,monospace" font-size="18">CAMBIA LA VENTANA. NO TU MEMORIA.</text>
-
-  <path fill="#111018" d="M64 363h347v7H64z"/>
-  <text x="64" y="398" fill="#fff8dc" font-family="DejaVu Sans Mono,monospace" font-size="15" font-weight="700">TAURI / SOLID / RUST / MIT / v0.1</text>
-
-  <g transform="translate(672 206)">
-    <path fill="#111018" d="M22 18h416v296H22z"/>
-    <path fill="#fff8dc" d="M0 0h416v296H0z"/>
-    <path fill="#d9ff39" d="M0 0h416v34H0z"/>
-    <path fill="#111018" d="M0 33h416v3H0z"/>
-    <path fill="#ff2a8f" d="M9 9h14v14H9z"/>
-    <path fill="#fff8dc" d="M14 13h4v4h-4z"/>
-    <path fill="#fff8dc" d="M349 9h20v14h-20zM376 9h28v14h-28z"/>
-    <text x="35" y="23" fill="#111018" font-family="DejaVu Sans Mono,monospace" font-size="12" font-weight="700">xenner.exe — notes</text>
-
-    <path fill="#5932b5" d="M0 36h130v226H0z"/>
-    <path fill="#111018" d="M130 36h3v226h-3z"/>
-    <text x="12" y="58" fill="#d9ff39" font-family="DejaVu Sans Mono,monospace" font-size="9" font-weight="700">NOTAS / 03</text>
-    <path fill="#d9ff39" stroke="#111018" stroke-width="2" d="M10 73h109v59H10z"/>
-    <path fill="#111018" d="M90 84h8v8h-8z"/>
-    <text x="19" y="100" fill="#111018" font-family="DejaVu Sans Mono,monospace" font-size="9" font-weight="700">PIEL_ES_TXT</text>
-    <path fill="#594f74" d="M19 111h73v4H19z"/>
-    <text x="20" y="161" fill="#fff8dc" font-family="DejaVu Sans Mono,monospace" font-size="9" font-weight="700">CYBER_98.MD</text>
-    <path fill="#594f74" d="M20 171h67v4H20z"/>
-    <text x="20" y="205" fill="#fff8dc" font-family="DejaVu Sans Mono,monospace" font-size="9" font-weight="700">PARA_LUEGO</text>
-
-    <text x="153" y="59" fill="#655f65" font-family="DejaVu Sans Mono,monospace" font-size="8">24.09.2026 / MEMORY</text>
-    <text x="153" y="102" fill="#111018" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="900">UNA PIEL</text>
-    <text x="153" y="129" fill="#ff2a8f" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="900">ES UN ARCHIVO</text>
-    <path fill="#b9b2a1" d="M153 157h225v6H153zM153 176h195v6H153zM153 195h217v6H153zM153 214h156v6H153z"/>
-    <path fill="#ff2a8f" d="M0 262h416v34H0z"/>
-    <path fill="#111018" d="M0 260h416v3H0z"/>
-    <text x="10" y="283" fill="#111018" font-family="DejaVu Sans Mono,monospace" font-size="9" font-weight="700">READY_ / LOCAL / TXT SKIN</text>
+  <!-- marca -->
+  <g transform="translate(72 60)" fill="#2383e2">
+    <rect x="0" y="0" width="21" height="21" rx="5.5" opacity="0.9"/>
+    <rect x="27" y="0" width="21" height="21" rx="5.5" opacity="0.45"/>
+    <rect x="13.5" y="13.5" width="21" height="21" rx="5.5" opacity="0.68"/>
+    <rect x="0" y="27" width="21" height="21" rx="5.5" opacity="0.45"/>
+    <rect x="27" y="27" width="21" height="21" rx="5.5" opacity="0.9"/>
+    <text x="64" y="33" fill="#191917" font-family="DejaVu Sans, system-ui, sans-serif" font-size="29" font-weight="600" letter-spacing="-1">xenner</text>
   </g>
 
-  <path fill="url(#scan)" d="M0 0h1200v630H0z"/>
+  <!-- titular -->
+  <text x="72" y="188" fill="#191917" font-family="DejaVu Serif, Georgia, serif" font-size="80" font-weight="500" letter-spacing="-2.4">Tus notas son</text>
+  <text x="72" y="266" fill="#1a5fc4" font-family="DejaVu Serif, Georgia, serif" font-size="80" font-weight="500" letter-spacing="-2.4">archivos tuyos.</text>
+
+  <path fill="#e7e4de" d="M72 302h1056v2H72z"/>
+
+  <text x="72" y="342" fill="#55524c" font-family="DejaVu Sans, system-ui, sans-serif" font-size="24">Un editor que trabaja sobre tu carpeta de Markdown. Escribes bonito y</text>
+  <text x="72" y="376" fill="#55524c" font-family="DejaVu Sans, system-ui, sans-serif" font-size="24">guardas texto plano. Pizarra, temas propios e historial de cambios.</text>
+
+  <!-- la app -->
+  <g transform="translate(72 430)">
+    <path fill="#ffffff" d="M0 0h1056v138a10 10 0 0 1-10 10H10A10 10 0 0 1 0 138z"/>
+    <path fill="none" stroke="#d5d1c9" stroke-width="1.5" d="M0 0h1056v138a10 10 0 0 1-10 10H10A10 10 0 0 1 0 138z"/>
+    <path fill="#e7e4de" d="M0 40h1056v1.5H0z"/>
+    <path fill="#f4f2ee" d="M0 41.5h252v96.5H0z"/>
+    <path fill="#d5d1c9" d="M252 41.5h1.5v96.5H252z"/>
+
+    <g transform="translate(18 14)">
+      <circle cx="5" cy="5" r="5" fill="#f4c7c3"/>
+      <circle cx="20" cy="5" r="5" fill="#f7dfb0"/>
+      <circle cx="35" cy="5" r="5" fill="#c3e3c8"/>
+      <circle cx="996" cy="5" r="4" fill="#4a9c5f"/>
+    </g>
+
+    <text x="22" y="66" fill="#191917" font-family="DejaVu Sans, system-ui, sans-serif" font-size="13" font-weight="600">Notas</text>
+    <path fill="#ffffff" stroke="#e7e4de" stroke-width="1.2" d="M20 78h212a7 7 0 0 1 0 14H20a7 7 0 0 1 0-14z"/>
+    <text x="30" y="89" fill="#55524c" font-family="DejaVu Sans, system-ui, sans-serif" font-size="10" font-weight="600">+ Nueva nota</text>
+    <text x="24" y="112" fill="#726f64" font-family="DejaVu Sans, system-ui, sans-serif" font-size="10">Ideas</text>
+    <path fill="#e7e7e4" d="M18 120h216a6 6 0 0 1 0 12H18a6 6 0 0 1 0-12z"/>
+    <text x="28" y="130" fill="#191917" font-family="DejaVu Sans, system-ui, sans-serif" font-size="10" font-weight="600">Notas de escritorio</text>
+
+    <text x="276" y="66" fill="#726f64" font-family="DejaVu Sans, system-ui, sans-serif" font-size="10">Ideas / Notas de escritorio.md</text>
+    <text x="276" y="94" fill="#191917" font-family="DejaVu Sans, system-ui, sans-serif" font-size="22" font-weight="600" letter-spacing="-0.6">Notas de escritorio</text>
+    <g fill="#e7e4de">
+      <path d="M276 108h300v5H276z"/>
+      <path d="M276 122h368v5H276z"/>
+    </g>
+
+    <!-- pizarra con el rectángulo de selección, que es lo diferencial.
+         El orden importa: relleno del rectángulo, figuras, tiradores y por
+         ultimo el borde. Dibujado al revés, el relleno tapa las figuras. -->
+    <g transform="translate(690 56)">
+      <path fill="#f4f2ee" stroke="#e7e4de" stroke-width="1.4" d="M6 0h232a6 6 0 0 1 6 6v62a6 6 0 0 1-6 6H6a6 6 0 0 1-6-6V6a6 6 0 0 1 6-6z"/>
+      <path fill="#eaf2fd" d="M18 8h218v56H18z"/>
+      <path fill="none" stroke="#2383e2" stroke-width="2.4" d="M32 18h60v34H32zM116 26h84v18h-84z"/>
+      <path fill="none" stroke="#2383e2" stroke-width="2.4" stroke-linecap="round" d="M50 60 104 32"/>
+      <path fill="none" stroke="#2383e2" stroke-width="1.3" stroke-dasharray="4 3" d="M27 13h70v44H27zM111 21h94v28h-94z"/>
+      <path fill="none" stroke="#2383e2" stroke-width="1.2" stroke-dasharray="5 4" d="M18 8h218v56H18z"/>
+      <circle cx="112" cy="64" r="5" fill="#2383e2" stroke="#f4f2ee" stroke-width="1.5"/>
+    </g>
+  </g>
+
+  <!-- pie -->
+  <g transform="translate(72 606)">
+    <text x="0" y="0" fill="#6d6961" font-family="DejaVu Sans, system-ui, sans-serif" font-size="15">Sin cuentas · sin nube · sin telemetría</text>
+    <text x="1056" y="0" text-anchor="end" fill="#6d6961" font-family="DejaVu Sans, system-ui, sans-serif" font-size="15">Tauri · SolidJS · Rust · MIT</text>
+  </g>
 </svg>
