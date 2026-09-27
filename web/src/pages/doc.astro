@@ -1,0 +1,1271 @@
+---
+import GuideLayout from '../layouts/GuideLayout.astro';
+import {
+  ASSET_EXTENSIONS,
+  HOOKS,
+  SHARED_KEYS,
+  SKIN_COMPONENT_DOCS,
+  type SkinComponentDoc,
+  type SkinKeyDoc,
+} from '../data/skins';
+
+const imageExts = ASSET_EXTENSIONS['Imágenes'].join(' ');
+const fontExts = ASSET_EXTENSIONS['Tipografías'].join(' ');
+
+/**
+ * Índice. Una página larga sin índice es un muro de texto, y quien llega aquí
+ * buscando «cómo pongo una imagen» no va a leer cinco mil palabras para
+ * encontrarla. Los `id` tienen que coincidir con los `<h2>` de abajo.
+ */
+const contents = [
+  { id: 'que-es', label: 'Qué es una skin' },
+  { id: 'cinco-minutos', label: 'La primera, en cinco minutos' },
+  { id: 'archivos', label: 'De qué archivos está hecha' },
+  { id: 'formato', label: 'El formato, que son tres reglas' },
+  { id: 'colores', label: 'Los colores' },
+  { id: 'claves', label: 'Todas las claves' },
+  { id: 'imagenes', label: 'Imágenes, iconos y tipografías' },
+  { id: 'css', label: 'Cambiarlo todo con CSS' },
+  { id: 'ejemplo', label: 'Una skin desde cero' },
+  { id: 'problemas', label: 'Si no funciona' },
+  { id: 'limites', label: 'Lo que no se puede' },
+];
+
+/** Escapa lo que venga de los datos antes de ponerlo en la página. */
+const esc = (value: string): string =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    // El `>` va en hexadecimal a propósito: un `>` suelto dentro de una
+    // expresión regular hace que `astro check` deje de entender el archivo
+    // entero y reporte cientos de errores falsos. Comprobado, no es teoría.
+    .replace(/\x3E/g, '&gt;')
+    .replace(/"/g, '&quot;');
+
+function card(key: SkinKeyDoc): string {
+  return [
+    '<div class="key">',
+    '<code class="key__name">' + esc(key.key) + '</code>',
+    '<p class="key__sees">' + esc(key.sees) + '</p>',
+    '<p class="key__type">Se escribe: <code>' + esc(key.example) + '</code>',
+    key.type ? ' &middot; ' + esc(key.type) : '',
+    '</p>',
+    key.note ? '<p class="key__note">' + esc(key.note) + '</p>' : '',
+    '</div>',
+  ].join('');
+}
+
+/** Un archivo de ejemplo entero por componente, con sus claves propias puestas. */
+function sampleFile(doc: SkinComponentDoc): string {
+  return [
+    '# ' + doc.name.toLowerCase(),
+    'background="#202020"',
+    'text="#e7e7e4"',
+    'border="1px solid #3c3c39"',
+    'radius="10px"',
+  ]
+    .concat(doc.keys.map((key) => key.key + '=' + key.example))
+    .concat([
+      'shadow="0 8px 24px rgba(0,0,0,0.28)"',
+      'accent="#5b9bd5"',
+      'font="system-ui, sans-serif"',
+    ])
+    .join('\n');
+}
+
+function section(doc: SkinComponentDoc): string {
+  return [
+    '<h3><code>' + esc(doc.file) + '</code> &mdash; ' + esc(doc.name) + '</h3>',
+    '<p>' + esc(doc.sees) + '</p>',
+    '<p>Además de las ocho de arriba, en este archivo valen:</p>',
+    doc.keys.map(card).join(''),
+    '<h4>Un ejemplo entero</h4>',
+    '<pre><code>' + esc(sampleFile(doc)) + '</code></pre>',
+  ].join('\n');
+}
+
+const sharedCards = SHARED_KEYS.map(card).join('');
+const componentSections = SKIN_COMPONENT_DOCS.map(section).join('\n');
+const hookRows = HOOKS.map(
+  (hook) => '<tr><td><code>' + esc(hook.hook) + '</code></td><td><strong>' +
+    esc(hook.name) + '</strong> &mdash; ' + esc(hook.sees) + '</td></tr>',
+).join('\n');
+---
+
+<GuideLayout
+  path="/doc/"
+  title="Documentación de Xenner: cómo hacer tu propia skin"
+  heading="Haz que Xenner se vea como quieras"
+  lead="Una skin es una carpeta con unos archivos tuyos dentro: colores, imágenes, iconos, tipografías y un archivo de CSS. No hay que compilar nada, no hay que instalar nada y no hace falta saber programar. Cambias un color, guardas, y la ventana cambia mientras la estás mirando. Esto es todo, de principio a fin."
+  description="Documentación completa de Xenner: cómo crear una skin, el formato de los archivos de texto, todas las claves con ejemplos, imágenes, iconos SVG, tipografías y custom.css."
+  eyebrow="Documentación"
+  contents={contents}
+>
+  <p>
+    Si has llegado aquí es que quieres que Xenner no se parezca a Xenner. Se
+    puede, y hay dos caminos. El primero son unos archivos de texto con una
+    línea por ajuste, y se entiende en cinco minutos. El segundo es un archivo de
+    CSS donde se puede poner lo que se te ocurra, imágenes incluidas. Los dos
+    conviven: empieza por el primero y ve al segundo cuando los colores se te
+    queden cortos.
+  </p>
+
+  <h2 id="que-es">Qué es una skin</h2>
+
+  <p>
+    Una skin es una carpeta con un archivo de texto dentro. Xenner la busca al
+    arrancar, la encuentra, lee lo que dice cada archivo y lo aplica. Si algo no
+    está, lo pone él. Si algo está mal, lo pasa por alto.
+  </p>
+
+  <p>
+    Esa última parte es la importante, y es deliberada: <strong>no hay forma de
+    romper la aplicación desde una skin</strong>. Una skin viene de fuera —la
+    puede haber descargado otra persona— y el peor resultado posible tiene que
+    ser que se vea con el aspecto de fábrica, no que se quede en blanco. Por eso
+    una clave que no reconoce se ignora en silencio, un archivo entero ilegible se
+    salta, y una imagen que no carga deja la superficie con su color en vez de
+    desaparecer el botón.
+  </p>
+
+  <h2 id="cinco-minutos">La primera, en cinco minutos</h2>
+
+  <ol class="steps">
+    <li>
+      <h3>Abre la carpeta de skins</h3>
+      <p>
+        Dentro de la carpeta de Xenner está <code>skins/</code>. Ahí hay cuatro
+        carpetas de ejemplo: <code>glass-default/</code>, <code>webcore/</code>,
+        <code>pixel/</code> y <code>aurora/</code>.
+      </p>
+    </li>
+    <li>
+      <h3>Duplica una</h3>
+      <p>
+        Copia una de las cuatro y renómbrala. El nombre de la carpeta es el
+        identificador de la skin, así que solo puede llevar letras, números,
+        guiones y guiones bajos. Si le pones <code>mi-tema</code>, esa es la
+        skin que luego activas.
+      </p>
+    </li>
+    <li>
+      <h3>Cambia un color</h3>
+      <p>
+        Abre <code>note.txt</code> con cualquier editor de texto, busca la línea
+        que empieza por <code>text=</code> y cambia lo que hay entre las
+        comillas. Guarda.
+      </p>
+    </li>
+    <li>
+      <h3>Elígela</h3>
+      <p>
+        Abre <em>Ajustes → Apariencia</em> y búscala en la lista. O, si prefieres
+        no tocar la aplicación, abre <code>skins/config.txt</code> y pon el
+        nombre de tu carpeta:
+      </p>
+      <pre is:raw><code>skinPath="mi-tema"</code></pre>
+      <p>
+        Los dos caminos sirven. Si tocas los dos, gana el que hayas modificado
+        más tarde, que es lo normal: si creas la skin y luego la eliges en la
+        aplicación, la aplicación manda.
+      </p>
+    </li>
+  </ol>
+
+  <div class="callout callout--tip">
+    <span class="callout__label">No hace falta reiniciar</span>
+    <p>
+      Xenner está mirando los archivos. Guardas el cambio y a los dos o tres
+      segundos la ventana ya está distinta. Si estás probando veinte ideas, esto
+      importa más de lo que parece. La lista de skins sí necesita reiniciar,
+      porque se construye al arrancar.
+    </p>
+  </div>
+
+  <h2 id="archivos">De qué archivos está hecha</h2>
+
+  <p>
+    Solo <code>skin.txt</code> es obligatorio; es lo que hace que Xenner sepa que
+    esa carpeta es una skin. Los demás son opcionales y cada uno controla un
+    trozo de la ventana. Lo que no escribas, Xenner lo pone por su cuenta, así
+    que una skin puede ser un único archivo.
+  </p>
+
+  <div class="files">
+    <div class="files__file">mi-tema/</div>
+    <div class="files__file">  skin.txt          <span class="files__opt">obligatorio: el nombre que se ve en la lista</span></div>
+    <div class="files__file">  background.txt    <span class="files__opt">el fondo de la ventana</span></div>
+    <div class="files__file">  sidebar.txt       <span class="files__opt">la lista de notas de la izquierda</span></div>
+    <div class="files__file">  note.txt          <span class="files__opt">la nota de la derecha</span></div>
+    <div class="files__file">  toolbar.txt       <span class="files__opt">la barra flotante sobre el texto</span></div>
+    <div class="files__file">  button.txt        <span class="files__opt">los botones</span></div>
+    <div class="files__file">  input.txt         <span class="files__opt">los campos donde se escribe</span></div>
+    <div class="files__file">  custom.css        <span class="files__opt">opcional: donde se puede cambiarlo todo</span></div>
+    <div class="files__dir">  assets/            <span class="files__opt">opcional: tus imágenes, iconos y tipografías</span></div>
+  </div>
+
+  <p>
+    Las dos últimas filas son la diferencia entre recolorear Xenner y
+    redibujarlo. Llega a ellas cuando <a href="#css">los colores se te queden
+    cortos</a>.
+  </p>
+
+  <h2 id="formato">El formato, que son tres reglas</h2>
+
+  <p>Cada línea dice una cosa:</p>
+
+  <pre is:raw><code>clave="valor"</code></pre>
+
+  <p>Y con eso se puede:</p>
+
+  <ul>
+    <li>
+      <strong>Escribir comentarios.</strong> Una línea que empieza por
+      <code>#</code> no cuenta para nada. Útil para acordarte de qué cambiaste
+      hace tres meses.
+    </li>
+    <li>
+      <strong>Dejar comillas.</strong> Son opcionales, pero con comillas se ve
+      de un vistazo dónde acaba el valor, y hay valores que las necesitan.
+    </li>
+    <li>
+      <strong>Repetir una clave.</strong> Gana la última. Si estás probando
+      colores y no quieres borrar el anterior, pon los dos y quédate con el
+      último.
+    </li>
+  </ul>
+
+  <p>
+    Y hay dos cosas que Xenner hace por si te equivocas: si una clave no la
+    reconoce, la pasa por alto, y si un valor no tiene sentido, lo pasa por alto.
+    Puedes escribir lo que quieras en el archivo y, en el peor de los casos, esa
+    línea no hará nada. La aplicación nunca se queda en blanco.
+  </p>
+
+  <h2 id="colores">Los colores</h2>
+
+  <p>
+    Xenner acepta los dos estilos de escribir un color. El que ya conoce
+    cualquiera es el hexadecimal, con una almohadilla delante:
+  </p>
+
+  <pre is:raw><code>text="#e7e7e4"
+accent="#5b9bd5"</code></pre>
+
+  <p>
+    Si prefieres poder controlar también la transparencia, el otro es
+    <code>rgba()</code>, con cuatro números: rojo, verde, azul y opacidad de 0
+    (invisible) a 1 (opaco).
+  </p>
+
+  <pre is:raw><code>background="rgba(32, 32, 32, 0.85)"</code></pre>
+
+  <p>
+    Ese cuarto número es lo que separa una skin normal de una de cristal. Si
+    pones una opacidad por debajo de 1 y activas <code>blur</code>, Xenner
+    difumina lo que hay detrás de la superficie.
+  </p>
+
+  <div class="callout callout--tip">
+    <span class="callout__label">Un truco para decidir los colores</span>
+    <p>
+      El color que más pesa en una skin es <code>text</code>, el de la letra.
+      Elige primero el del fondo y luego mira el de la letra hasta que se lea
+      bien. Al revés cuesta más: probar veinte fondos hasta que uno funcione
+      con el texto que ya habías elegido.
+    </p>
+  </div>
+
+  <h2 id="claves">Todas las claves</h2>
+
+  <p>
+    Hay {SHARED_KEYS.length + SKIN_COMPONENT_DOCS.reduce((total, doc) => total + doc.keys.length, 0)}{' '}
+    claves en total. Las ocho primeras valen en cualquier archivo de componente;
+    el resto dependen del trozo de pantalla que estés cambiando.
+  </p>
+
+  <h3>Cómo se escribe</h3>
+
+  <p>
+    Las comillas son opcionales en casi todos los casos. Se ponen cuando el
+    valor lleva espacios de sobra, y son menos propensas a que se cuele algo sin
+    querer, así que ponerlas siempre no es mala idea.
+  </p>
+
+  <p>
+    Y estas son las cosas que Xenner pasa por alto, sin avisar y sin romper nada.
+    Están aquí para que sepas que no hay forma de estropear la aplicación desde
+    una skin:
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Se ignora</th>
+        <th>Por qué</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Una clave que no existe</td>
+        <td>Para poder experimentar sin miedo. Escribe <code>fontt</code> en vez de <code>font</code> y no pasa nada.</td>
+      </tr>
+      <tr>
+        <td>Una clave en el archivo equivocado</td>
+        <td>Cada archivo solo acepta las suyas. <code>itemHover</code> funciona en <code>sidebar.txt</code> y se ignora en cualquier otro.</td>
+      </tr>
+      <tr>
+        <td>Una imagen que no existe</td>
+        <td>El trozo conserva su aspecto por defecto. Se pierde la imagen, no el botón.</td>
+      </tr>
+      <tr>
+        <td>Un <code>data:</code> que no sea una imagen</td>
+        <td>Solo se cargan imágenes incrustadas. Un <code>data:text/html</code> no es una imagen y se descarta.</td>
+      </tr>
+      <tr>
+        <td>Una dirección web dentro de <code>url()</code></td>
+        <td>Una skin nunca habla con internet. No es un capricho: es lo que evita que la apariencia que instalas reporte a alguien qué tienes abierto.</td>
+      </tr>
+      <tr>
+        <td>Una ruta fuera de la skin</td>
+        <td>Ni <code>/etc/passwd</code> ni <code>../../</code>. Solo archivos que estén dentro de <code>assets/</code>.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Las ocho que valen en todas partes</h3>
+
+  <p>
+    Sirven en <code>background.txt</code>, <code>sidebar.txt</code>,
+    <code>note.txt</code>, <code>button.txt</code>, <code>input.txt</code> y
+    <code>toolbar.txt</code>. Lo que significan depende del archivo:
+    <code>background</code> en la nota es el papel donde escribes, y en la barra
+    lateral es el fondo de la lista.
+  </p>
+
+  <div set:html={sharedCards} />
+
+  <div class="callout callout--tip">
+    <span class="callout__label">Sobre <code>font</code></span>
+    <p>
+      La pila de tipografías no es una lista de lo que tienes instalado. El
+      ordenador usa la primera que encuentre y se salta las que no. Si pones
+      cuatro que no tienes y al final una que sí, funciona; si ninguna de las
+      que pones está, se queda con la del sistema. Terminar siempre en
+      <code>serif</code>, <code>sans-serif</code> o <code>monospace</code>
+      convierte ese final en un plan B seguro.
+    </p>
+  </div>
+
+  <h3>Las claves de cada archivo</h3>
+
+  <div set:html={componentSections} />
+
+  <h3>El manifiesto</h3>
+
+  <p>
+    <code>skin.txt</code> es el único archivo obligatorio. Lo que Xenner lee de
+    él es el nombre que sale en la lista; las otras dos líneas salen al lado, en
+    letra pequeña.
+  </p>
+
+  <pre is:raw><code>name="Noche"
+version="1.0.0"
+author="tu nombre"</code></pre>
+
+  <p>
+    Las tres son opcionales. Sin <code>name</code> sale el nombre de la carpeta.
+    Si te pasas de 128 caracteres, se corta. Aquí las comillas no hacen falta.
+  </p>
+
+  <h2 id="imagenes">Imágenes, iconos y tipografías</h2>
+
+  <p>
+    Los archivos de texto se quedan cortos en cuanto quieres algo que no sea un
+    color. A partir de aquí metes una carpeta <code>assets/</code> y ya puedes
+    poner tu foto, tu icono y tu letra.
+  </p>
+
+  <div class="files">
+    <div class="files__file">mi-tema/</div>
+    <div class="files__file">  skin.txt</div>
+    <div class="files__file">  background.txt</div>
+    <div class="files__file">  custom.css</div>
+    <div class="files__dir">  assets/</div>
+    <div class="files__file">    montana.jpg       <span class="files__opt">una foto de 4K, 2 MB</span></div>
+    <div class="files__file">    textura.png       <span class="files__opt">un tile que se repite</span></div>
+    <div class="files__file">    marco.png         <span class="files__opt">un marco que se estira</span></div>
+    <div class="files__file">    nota.svg          <span class="files__opt">un icono propio</span></div>
+    <div class="files__file">    Inter.woff2       <span class="files__opt">una tipografía</span></div>
+  </div>
+
+  <p>Los formatos que se aceptan son estos y ninguno más:</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Tipo</th>
+        <th>Formatos</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Imágenes</td>
+        <td>{imageExts}</td>
+      </tr>
+      <tr>
+        <td>Tipografías</td>
+        <td>{fontExts}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    Ningún archivo puede pasar de <strong>4 MB</strong>, y no hay vídeo ni sonido:
+    la lista de arriba es la lista entera. Con una foto de 4K en JPEG te queda de
+    sobra para el fondo.
+  </p>
+
+  <h3>Nombrar un archivo</h3>
+
+  <p>
+    Se nombra con su ruta dentro de <code>url()</code>. Sin barras delante, sin
+    <code>..</code>, sin <code>http</code>:
+  </p>
+
+  <pre is:raw><code>url(assets/montana.jpg)          <span>correcto</span>
+url(assets/iconos/hoja.svg)     <span>correcto, en una subcarpeta</span>
+url(montana.jpg)                <span>no: está en assets/</span>
+url(/usr/yo/foto.jpg)           <span>no: ruta absoluta</span>
+url(../../foto.jpg)             <span>no: se sale de la skin</span>
+url(https://.../foto.jpg)       <span>no: una skin no habla con internet</span></code></pre>
+
+  <p>Con comillas si el nombre tiene espacios:</p>
+
+  <pre is:raw><code>url('assets/mi foto.jpg')</code></pre>
+
+  <div class="callout callout--tip">
+    <span class="callout__label">Si te equivocas en el nombre, no se rompe nada</span>
+    <p>
+      Xenner deja la referencia como estaba y el navegador hace como si no
+      hubiera ninguna. La superficie conserva su color de fondo y el resto de
+      la skin se aplica igual. Perder una imagen es un error visible; romper el
+      botón sería un desastre.
+    </p>
+  </div>
+
+  <h3>Un fondo de foto</h3>
+
+  <p>Lo más directo, en <code>background.txt</code>:</p>
+
+  <pre is:raw><code>background="url(assets/montana.jpg)"</code></pre>
+
+  <p>
+    Eso pone la foto del revés y sin escalar: si es más pequeña que la ventana
+    se verá repetida. Para controlarlo hace falta <code>custom.css</code>, que es
+    donde se escriben las propiedades que no caben en un valor:
+  </p>
+
+  <pre is:raw><code>/* mi-tema/custom.css */
+[data-x="app"] {
+  background-image: url(assets/montana.jpg);
+  background-size: cover;      <span>/* cubre toda la ventana, recortando */</span>
+  background-position: center; <span>/* lo que sobra se corta por el centro */</span>
+}</code></pre>
+
+  <p>
+    Con <code>background-size: cover</code> y una foto apaisada, una skin se ve
+    bien en un monitor panorámico y en uno cuadrado. Es la diferencia entre
+    «funciona en mi ordenador» y «funciona en todos».
+  </p>
+
+  <p>
+    Para texturas —rayas, puntos, un papel— casi siempre conviene un tile pequeño
+    en vez de una imagen grande, porque se repite y pesa menos. Se pone en
+    <code>background-image</code> y se le dice <code>background-size</code>.
+  </p>
+
+  <h3>Iconos propios, y por qué un SVG solo</h3>
+
+  <p>
+    Un SVG es un dibujo hecho de vectores: se describe con líneas y curvas, no con
+    píxeles. Por eso se puede poner enorme sin ponerse borroso, y por eso pesa
+    poco. Para iconos, es lo que hay que usar.
+  </p>
+
+  <pre is:raw><code>[data-x="tree-row-icon"] {
+  background-color: #ffd166;
+  mask-image: url(assets/nota.svg);
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+}</code></pre>
+
+  <div class="callout callout--tip">
+    <span class="callout__label">El truco de <code>mask-image</code></span>
+    <p>
+      Si pintas un SVG con <code>mask-image</code>, el SVG no se ve: solo se ve
+      <em>su forma</em>, teñida del color de <code>background-color</code>. Y
+      como el color lo eliges tú en CSS, un solo archivo sirve para el icono
+      normal, el de la nota abierta, el apagado y el que quieras. Sin esto
+      necesitarías un archivo por estado y por color.
+    </p>
+  </div>
+
+  <p>
+    El SVG tiene que ser de un solo color y completamente opaco, que es como se
+    hacen los iconos. El color se lo pones después. Hay un SVG de ejemplo en
+    <code>skins/pixel/assets/nota.svg</code> con el archivo entero.
+  </p>
+
+  <h3>Un marco alrededor de las notas</h3>
+
+  <p>
+    La razón de ser de <code>border-image</code>. Cortas una imagen en nueve
+    partes —las cuatro esquinas no se tocan, los cuatro lados se estiran, el
+    centro se repite— y el marco acompaña al tamaño de la ventana sin deformarse:
+  </p>
+
+  <pre is:raw><code>[data-x="note"] {
+  border: none;
+  border-image: url(assets/marco.png) 8 fill;
+  padding: 14px;
+}</code></pre>
+
+  <p>
+    El <code>8</code> son los píxeles de cada esquina. El <code>fill</code> es
+    lo que hace que el centro de la imagen se vea también en el área de relleno.
+    Con una imagen normal de fondo esto no se puede: se deformaría en cuanto la
+    ventana no mida lo que el dibujo.
+  </p>
+
+  <h3>Tipografías</h3>
+
+  <p>Se puede llevar una letra dentro de la skin:</p>
+
+  <pre is:raw><code>/* mi-tema/custom.css */
+@font-face {
+  font-family: "Mi Letra";
+  src: url(assets/MiLetra.woff2) format("woff2");
+  font-display: swap;
+}
+
+[data-x="editor"] {
+  font-family: "Mi Letra", serif;
+}</code></pre>
+
+  <p>
+    <code>font-display: swap</code> importa: dice que si la letra tarda en
+    cargar, se muestre la de reserva en vez de un hueco vacío. En el
+    <code>src</code> va la extensión real dentro de <code>format()</code>, y si
+    tu tipografía no tiene <code>.woff2</code> también valen {fontExts.replace('.woff2, ', '')}.
+  </p>
+
+  <div class="callout callout--warn">
+    <span class="callout__label">De dónde sale la letra</span>
+    <p>
+      Muchas tipografías tienen licencia. Antes de meter una en tu skin, mira qué
+      dice la suya: casi todas permiten usarla y redistribuirla, pero algunas no.
+      Xenner no puede comprobarlo por ti.
+    </p>
+  </div>
+
+  <h2 id="css">Cambiarlo todo con CSS</h2>
+
+  <p>
+    Los archivos de texto tienen una lista cerrada de claves, y está cerrada a
+    propósito: son painless. Pero hay cosas que no entran en
+    <code>clave="valor"</code>. Un espacio entre letras, un marco alrededor de las
+    notas, un icono con tu forma, un color para el modo claro y otro para el
+    oscuro, una animación. Para eso está <code>custom.css</code>, que es un
+    archivo de CSS normal dentro de tu skin.
+  </p>
+
+  <div class="callout callout--tip">
+    <span class="callout__label">No hace falta saber CSS</span>
+    <p>
+      Con este archivo ya no es «escribir una clave y cambiar un color», es
+      «programar». Si tu idea es recolorear Xenner, los <code>.txt</code> te
+      bastan de sobra. Llega aquí cuando quieras algo que no sea un color, y
+      entonces sí, dedicate un rato.
+    </p>
+  </div>
+
+  <h3>Empezar</h3>
+
+  <p>
+    Crea <code>custom.css</code> en la carpeta de tu skin. La primera línea útil
+    puede ser esta, y ya tienes un fondo con un degradado sin necesidad de
+    ninguna imagen:
+  </p>
+
+  <pre is:raw><code>/* mi-tema/custom.css */
+[data-x="app"] {
+  background-image: linear-gradient(160deg, #1b1035, #0b1020);
+}</code></pre>
+
+  <p>Guárdalo. La ventana cambia a los dos o tres segundos, sin reiniciar.</p>
+
+  <h3>A qué se puede agarrar: <code>data-x</code></h3>
+
+  <p>
+    Xenner está hecho con módulos de CSS, así que los nombres de clase cambian
+    en cada compilación y no sirven para nada. Por eso cada trozo de la ventana
+    lleva un atributo <code>data-x</code> con un nombre fijo. Es la lista
+    pública: no cambia sin avisar.
+  </p>
+
+  <div class="files">
+    <div class="files__file">[data-x="note-title"]     <span class="files__opt">el campo del título</span></div>
+    <div class="files__file">[data-x="tree-row"]       <span class="files__opt">una fila de la lista</span></div>
+    <div class="files__file">[data-x="sidebar"]        <span class="files__opt">la columna izquierda</span></div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th><code>data-x</code></th>
+        <th>Qué es</th>
+      </tr>
+    </thead>
+    <tbody set:html={hookRows} />
+  </table>
+
+  <p>Se pueden combinar, y hay estados que se marcan con atributos aparte:</p>
+
+  <pre is:raw><code><span>/* la nota que está abierta */</span>
+[data-x="tree-row"][data-selected] { background: #ffd166; }
+
+<span>/* solo las carpetas */</span>
+[data-x="tree-item"][data-kind="directory"] { ... }
+
+<span>/* solo el botón grande de "Nueva nota" */</span>
+[data-x="button"][data-x-role="primary"] { ... }</code></pre>
+
+  <h3>Y dentro del texto de la nota</h3>
+
+  <p>
+    <code>[data-x="editor"]</code> es el editor, y dentro hay HTML normal, así
+    que valen las etiquetas de Markdown tal cual:
+  </p>
+
+  <pre is:raw><code>[data-x="editor"] {
+  font-size: 18px;
+  line-height: 1.8;
+  max-width: 700px;
+}
+
+[data-x="editor"] h1        { font-size: 2rem; }
+[data-x="editor"] blockquote { border-left: 3px solid #7dd3fc; }
+[data-x="editor"] code       { background: rgba(125,211,252,0.12); }
+[data-x="editor"] a          { color: #7dd3fc; }</code></pre>
+
+  <p>
+    Ese ancho, el tamaño de letra y el interlineado son tres cosas que ningún
+    <code>.txt</code> podía cambiar. Con CSS sí, y es la diferencia entre una
+    skin que se ve como Xenner con otros colores y una que se ve como tú
+    querías.
+  </p>
+
+  <h3>Un color para de día y otro para de noche</h3>
+
+  <p>
+    Es la razón principal por la que existe este archivo. Con los
+    <code>.txt</code> solo hay un color por clave, así que una skin se ve igual
+    en los dos modos y queda ilegible en uno de ellos. Con CSS, Xenner escribe
+    en la página qué modo está activo, y tú decides:
+  </p>
+
+  <pre is:raw><code>/* de día */
+[data-x="app"] { background: #f6f8fd; color: #16233d; }
+[data-x="note"] { background: #ffffff; }
+
+/* de noche */
+[data-x="app"][data-color-scheme="dark"] { background: #0b1020; color: #e8f0ff; }
+[data-x="note"][data-color-scheme="dark"] { background: #151b33; }</code></pre>
+
+  <p>
+    Lo mejor es no repetir: define variables y usa <code>var()</code>, y la
+    variante es solo cambiar cuatro valores.
+  </p>
+
+  <pre is:raw><code>:root[data-skin-id="mi-tema"] {
+  --papel: #f6f8fd;
+  --tinta: #16233d;
+  --borde: rgba(22,35,61,0.14);
+}
+
+:root[data-skin-id="mi-tema"][data-color-scheme="dark"] {
+  --papel: #0b1020;
+  --tinta: #e8f0ff;
+  --borde: rgba(148,197,255,0.18);
+}
+
+[data-x="app"]  { background: var(--papel); color: var(--tinta); }
+[data-x="note"] { background: var(--papel); border-color: var(--borde); }</code></pre>
+
+  <p>
+    Ese <code>data-skin-id</code> es el identificador de la skin, y Xenner lo
+    escribe en la página al cargarla. Escribirlo delante de tus reglas es lo que
+    garantiza que solo apliquen a la tuya. Si quitas ese trozo, siguen
+    funcionando, pero si alguien edita tu skin mientras usa otra, verían cosas
+    raras.
+  </p>
+
+  <div class="callout">
+    <span class="callout__label">Por qué el CSS gana a los TXT</span>
+    <p>
+      El orden es: los valores que Xenner trae dentro, luego tus archivos de
+      texto, luego tu <code>custom.css</code>. Gana el último. Como una
+      declaración <code>!important</code> de una hoja le gana al estilo que
+      Xenner escribe en la página, <code>custom.css</code> puede corregir
+      incluso los colores que tú mismo definiste en los <code>.txt</code>. Es a
+      propósito: si algo no se puede expresar en los TXT, se dice aquí.
+    </p>
+  </div>
+
+  <h3>Añadir cosas que no estaban</h3>
+
+  <p>
+    <code>::before</code> y <code>::after</code> añaden contenido sin tocar el
+    sitio donde va. El truco es que, si no les pones contenido, no ocupan nada:
+  </p>
+
+  <pre is:raw><code><span>/* una barrita de color en la nota abierta */</span>
+[data-x="tree-row"][data-selected]::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 50%;
+  width: 3px; height: 18px;
+  transform: translateY(-50%);
+  background: #7dd3fc;
+}
+
+<span>/* un asterisco al lado del título */</span>
+[data-x="note-title"]::after {
+  content: " ✦";
+  color: #ffd166;
+}</code></pre>
+
+  <h3>Cosas que también funcionan</h3>
+
+  <ul>
+    <li>
+      <strong>Transiciones y animaciones.</strong> <code>transition</code> para
+      que algo cambie con suavidad, <code>@keyframes</code> para algo que se
+      mueva solo.
+    </li>
+    <li>
+      <strong>Efectos.</strong> <code>filter</code> (desenfocar, cambiar el
+      brillo, poner en blanco y negro), <code>backdrop-filter</code> (el
+      cristal), <code>mix-blend-mode</code>.
+    </li>
+    <li>
+      <strong>Gradientes.</strong> <code>linear-gradient</code>,
+      <code>radial-gradient</code>, <code>conic-gradient</code>. Se pueden
+      encadenar separándolos por comas, y el primero es el de encima.
+    </li>
+  </ul>
+
+  <div class="callout callout--warn">
+    <span class="callout__label">Sobre el movimiento</span>
+    <p>
+      Si tu skin mueve cosas, ya de origen que respete a quien tiene
+      activada la preferencia de menos animación del sistema. En las dos skins de
+      ejemplo está escrito, y son cuatro líneas:
+    </p>
+  </div>
+
+  <pre is:raw><code>@media (prefers-reduced-motion: reduce) {
+  [data-x="app"] *, [data-x="app"] *::before {
+    animation: none !important;
+    transition: none !important;
+  }
+}</code></pre>
+
+  <h2 id="ejemplo">Una skin desde cero</h2>
+
+  <p>
+    Vamos a hacer una que se llame <strong>sepia</strong>: papel cálido, tinta
+    marrón, sin bordes duros, y dos versiones, una de día y otra de noche, porque
+    de noche un papel claro hace daño a la vista.
+  </p>
+
+  <h3>1. La carpeta y el manifiesto</h3>
+
+  <p>
+    Copia una skin que te guste, bórrala por dentro y renómbrala
+    <code>sepia</code>. Empezar de cero en vez de borrar evita que se te pase un
+    archivo del original y te preguntes después de por qué sigue apareciendo un
+    color.
+  </p>
+
+  <pre is:raw><code>name="Sepia"
+version="1.0.0"
+author="tu nombre"</code></pre>
+
+  <h3>2. Elegir los colores antes de escribir nada</h3>
+
+  <p>
+    Este es el paso que más se salta la gente y el que más resultados da. Una
+    skin son unos ocho colores que se repiten por todas partes, y si los eliges
+    de una vez, los seis archivos se escriben solos y sin colores que se
+    contradigan.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Para qué</th>
+        <th>Color</th>
+        <th>Dónde va</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>El papel</td>
+        <td><code>#f4ecd8</code></td>
+        <td><code>background</code> de la ventana</td>
+      </tr>
+      <tr>
+        <td>La tinta</td>
+        <td><code>#3b2f2a</code></td>
+        <td><code>text</code> de todo</td>
+      </tr>
+      <tr>
+        <td>La tinta suave</td>
+        <td><code>#7a6a5f</code></td>
+        <td><code>textDim</code></td>
+      </tr>
+      <tr>
+        <td>La sombra de las líneas</td>
+        <td><code>rgba(59, 47, 42, 0.16)</code></td>
+        <td><code>border</code></td>
+      </tr>
+      <tr>
+        <td>Lo que marca lo elegido</td>
+        <td><code>#9a5b2c</code></td>
+        <td><code>accent</code></td>
+      </tr>
+      <tr>
+        <td>Al pasar el ratón</td>
+        <td><code>rgba(154, 91, 44, 0.10)</code></td>
+        <td><code>itemHover</code>, <code>backgroundHover</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>3. Los seis archivos</h3>
+
+  <p>
+    Con los colores ya decididos, cada archivo es corto. Fíjate en que casi todo
+    se repite: por eso saber qué clave hace falta en cada sitio es la mitad del
+    trabajo.
+  </p>
+
+  <p><code>background.txt</code> — el papel de detrás de todo:</p>
+
+  <pre is:raw><code># el papel, con un veteado muy suave
+background="#f4ecd8"
+overlay="radial-gradient(circle at 12% 8%, rgba(154,91,44,0.07), transparent 45%)"
+text="#3b2f2a"
+textDim="#7a6a5f"
+accent="#9a5b2c"</code></pre>
+
+  <p>
+    El <code>overlay</code> es un degradado radial muy tenue, solo un 7% de
+    opacidad: se nota si lo buscas y no estorba si no lo buscas. Esa es la
+    diferencia entre una skin con textura y una que parece sucia.
+  </p>
+
+  <p><code>sidebar.txt</code> — la lista, un pelo más oscura:</p>
+
+  <pre is:raw><code>background="#efe4cb"
+text="#3b2f2a"
+textDim="#7a6a5f"
+itemHover="rgba(154,91,44,0.10)"
+itemActive="rgba(154,91,44,0.18)"
+border="1px solid rgba(59,47,42,0.12)"
+accent="#9a5b2c"
+radius="0px"</code></pre>
+
+  <p><code>note.txt</code> — la hoja, lo más claro para no cansar la vista:</p>
+
+  <pre is:raw><code>background="#fbf6ea"
+text="#3b2f2a"
+border="1px solid rgba(59,47,42,0.16)"
+radius="6px"
+shadow="0 1px 3px rgba(59,47,42,0.08)"
+accent="#9a5b2c"
+font="Georgia, 'Noto Serif', serif"</code></pre>
+
+  <p>
+    <code>blur</code> no hace falta aquí: sin fondo transparente, no se ve nada.
+    Y <code>shadow</code> es una sombra mínima, de un píxel de difuminado. Con
+    papel, una sombra fuerte parece una mancha de humedad.
+  </p>
+
+  <p><code>button.txt</code> — invisible hasta que pasas por encima:</p>
+
+  <pre is:raw><code>background="transparent"
+backgroundHover="rgba(154,91,44,0.12)"
+text="#3b2f2a"
+textHover="#9a5b2c"
+border="1px solid transparent"
+borderHover="1px solid rgba(154,91,44,0.45)"
+radius="6px"
+accent="#9a5b2c"</code></pre>
+
+  <p>
+    El borde del botón es transparente hasta que pasas el ratón por encima, que
+    es cuando se enciende. Así la pantalla no se llena de cajas.
+  </p>
+
+  <p><code>input.txt</code> — los campos:</p>
+
+  <pre is:raw><code>background="#fbf6ea"
+text="#3b2f2a"
+placeholder="#a8977f"
+border="1px solid rgba(59,47,42,0.20)"
+focus="#9a5b2c"
+radius="4px"
+font="Georgia, 'Noto Serif', serif"</code></pre>
+
+  <p><code>toolbar.txt</code> — la barra flotante:</p>
+
+  <pre is:raw><code>background="#efe4cb"
+backgroundHover="rgba(154,91,44,0.12)"
+text="#3b2f2a"
+textDim="#7a6a5f"
+border="1px solid rgba(59,47,42,0.12)"
+radius="8px"
+accent="#9a5b2c"</code></pre>
+
+  <h3>4. Activarla y mirarla</h3>
+
+  <p>
+    Pon <code>skinPath="sepia"</code> en <code>skins/config.txt</code> y mira.
+    Ahora viene la parte que no se explica en ninguna parte: deja la ventana
+    durante un rato y anota lo que te chirría. En una skin así lo típico es que
+    la nota abierta no se distingue lo suficiente de las demás, que el gris de
+    <code>textDim</code> está un pelo bajo de contraste, o que el
+    <code>accent</code> aparece en más sitios de los que creías.
+  </p>
+
+  <p>
+    Arreglar eso es cambiar un color en un archivo y mirar otra vez. Por eso
+    Xenner recarga solo: el bucle de probar es el trabajo.
+  </p>
+
+  <h3>5. La variante de noche</h3>
+
+  <p>
+    Con lo hecho hasta ahora, la skin es de papel claro siempre. De noche eso es
+    un blanco enorme en mitad de la pantalla. Se arregla en
+    <code>custom.css</code>, y no hay que tocar ninguno de los seis archivos.
+  </p>
+
+  <p>
+    La idea es: en vez de escribir el color en cada superficie, se declaran
+    unas pocas variables y se usan. Así la versión de noche son seis líneas, no
+    cuarenta.
+  </p>
+
+  <pre is:raw><code>/* mi-tema/custom.css */
+
+/* de día: los valores del papel */
+:root[data-skin-id="sepia"] {
+  --papel:    #f4ecd8;
+  --hoja:     #fbf6ea;
+  --panel:    #efe4cb;
+  --tinta:    #3b2f2a;
+  --tenue:    #7a6a5f;
+  --linea:    rgba(59, 47, 42, 0.14);
+  --viva:     #9a5b2c;
+}
+
+/* de noche: los mismos, para papel oscuro */
+:root[data-skin-id="sepia"][data-color-scheme="dark"] {
+  --papel:    #1c1614;
+  --hoja:     #241d1a;
+  --panel:    #191311;
+  --tinta:    #e8dcc8;
+  --tenue:    #9c8b7c;
+  --linea:    rgba(232, 220, 200, 0.14);
+  --viva:     #d9a066;
+}
+
+/* y ahora sí, una regla por superficie */
+[data-x="app"]     { background: var(--papel); color: var(--tinta); }
+[data-x="sidebar"] { background: var(--panel); color: var(--tinta); }
+[data-x="note"]    { background: var(--hoja);  color: var(--tinta); }
+
+[data-x="note-title"] { color: var(--tinta); }
+[data-x="note-path"]  { color: var(--tenue); }</code></pre>
+
+  <p>
+    Ahora resulta que <code>custom.css</code> va después de los
+    <code>.txt</code>, así que estas reglas ganan sobre los colores que
+    escribiste en el paso 3. No hace falta borrar nada: el <code>.txt</code> se
+    queda como documentación de la skin y el CSS manda.
+  </p>
+
+  <h3>6. Un detalle: la tipografía de la nota</h3>
+
+  <p>
+    Con una skin de papel, el texto de la nota es lo que más se nota. Con
+    <code>Georgia</code> se lee bien, pero el ancho de columna de serie deja
+    líneas demasiado largas. Eso no tiene clave en ningún <code>.txt</code>, y
+    por eso es un buen primer uso de <code>custom.css</code>:
+  </p>
+
+  <pre is:raw><code>[data-x="editor"] {
+  font-family: "Iowan Old Style", Georgia, "Noto Serif", serif;
+  font-size: 18px;
+  line-height: 1.7;
+  --skin-content-width: 680px;
+}</code></pre>
+
+  <p>
+    680 píxeles de ancho es más o menos 75 caracteres por línea. Más que eso y el
+    ojo se pierde al llegar al final de la línea.
+  </p>
+
+  <h2 id="problemas">Si no funciona</h2>
+
+  <p>
+    La buena noticia es que hay muy pocas formas de romperlo. Casi todo lo que
+    verás aquí es «no se ve el cambio», no «se ha roto».
+  </p>
+
+  <h3>La skin no aparece en la lista</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>El problema</th>
+        <th>La causa</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Falta <code>skin.txt</code></td>
+        <td>Sin ese archivo, la carpeta no se considera una skin. Se llama igual que los demás, y contiene <code>name</code>, <code>version</code> y <code>author</code>.</td>
+      </tr>
+      <tr>
+        <td>El nombre lleva espacios, tildes o <code>ñ</code></td>
+        <td>Solo valen letras sin tilde, números, guiones y guiones bajos. <code>mi tema</code> no vale; <code>mi-tema</code> sí.</td>
+      </tr>
+      <tr>
+        <td>La skin está en el sitio equivocado</td>
+        <td>Tiene que estar en la carpeta <code>skins/</code>, dentro de la de Xenner. Si la has dejado en el escritorio, no la encuentra.</td>
+      </tr>
+      <tr>
+        <td>Toca reiniciar</td>
+        <td>La lista se construye al arrancar. Si has creado la carpeta con la aplicación abierta, ciérrala y ábrela otra vez.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Cambié un color y no pasa nada</h3>
+
+  <ul>
+    <li>
+      <strong>¿Estás mirando la skin correcta?</strong> En <em>Ajustes →
+      Apariencia</em> sale la que está activa. Si has editado <code>sepia/</code>
+      pero la activa se llama <code>webcore</code>, no vas a ver nada, y el
+      archivo está perfectamente.
+    </li>
+    <li>
+      <strong>¿La has activado después de editar?</strong> Si elegiste la skin
+      antes de crearla, quizá se quedó otra seleccionada.
+    </li>
+    <li>
+      <strong>¿La clave existe en ese archivo?</strong> <code>itemHover</code>
+      solo funciona en <code>sidebar.txt</code>. Si lo pones en
+      <code>note.txt</code>, Xenner lo pasa por alto sin avisar. Es la causa
+      número uno de «no hace nada».
+    </li>
+    <li>
+      <strong>¿Está el signo <code>=</code>?</strong> <code>text #fff</code> no
+      es una línea, es un comentario mal puesto. <code>text="#fff"</code> sí.
+    </li>
+  </ul>
+
+  <div class="callout callout--tip">
+    <span class="callout__label">Cómo averiguarlo en diez segundos</span>
+    <p>
+      Deja la skin con un color imposible de confundir: pon
+      <code>background="#ff0000"</code> y <code>text="#ffff00"</code> en
+      <code>background.txt</code>. Si aparece rojo y amarillo, el problema es
+      que estabas mirando la skin equivocada. Si no aparece nada, es que ese
+      archivo no se está leyendo, y entonces el problema está en cómo se llama
+      la skin o en dónde está.
+    </p>
+  </div>
+
+  <h3>Una imagen no se ve</h3>
+
+  <ul>
+    <li>
+      <strong>¿Está en <code>assets/</code>?</strong> Es la carpeta con ese
+      nombre exacto, dentro de la de tu skin. Si la has dejado suelta en la
+      carpeta de la skin, no la encuentra.
+    </li>
+    <li>
+      <strong>¿El nombre coincide exactamente?</strong> Mayúsculas y minúsculas
+      cuentan: <code>Fondo.PNG</code> no es <code>fondo.png</code>.
+    </li>
+    <li>
+      <strong>¿Está dentro del <code>url(...)</code>?</strong> Y sin barras
+      delante, porque la ruta es relativa a la carpeta de la skin.
+    </li>
+    <li>
+      <strong>¿El formato está en la lista?</strong> Un <code>.heic</code> o un
+      <code>.psd</code> no cargan, aunque el sistema los sepa abrir.
+    </li>
+    <li>
+      <strong>¿Pesa más de 4 MB?</strong> Si pesa más, no se ve y no avisa.
+    </li>
+  </ul>
+
+  <p>
+    Un detalle que sorprende: si pones una imagen en <code>background</code> de
+    <code>note.txt</code>, lo que se ve es el fondo de la nota, no el de la
+    ventana. Para el fondo de la ventana es <code>background.txt</code>.
+  </p>
+
+  <h3>El texto no se lee</h3>
+
+  <p>
+    Es el problema de una paleta demasiado apagada, y tiene arreglo rápido: sube
+    el contraste entre <code>text</code> y <code>background</code>. Si son muy
+    parecidos, oscurece el texto o acláralo. Y revisa <code>textDim</code> y
+    <code>placeholder</code>, que son los que más se olvidan y los que peor se
+    leen.
+  </p>
+
+  <p>
+    Si el problema es solo en el modo claro o solo en el oscuro, casi seguro que
+    has escrito la skin con <code>.txt</code> solamente, y el color es el mismo
+    en los dos. Eso se arregla con las variantes de <a href="#css">custom.css</a>.
+  </p>
+
+  <h3>Se aplica a medias</h3>
+
+  <p>
+    Un color en un sitio y no en otro, normalmente es que hay dos capas. Si has
+    escrito el color en un <code>.txt</code> y además lo has cambiado en
+    <code>custom.css</code>, gana el CSS. Y si has puesto un color en dos
+    archivos que se aplican a la misma parte, gana el del componente que le
+    toca: <code>note.txt</code> para la nota, <code>sidebar.txt</code> para la
+    lista.
+  </p>
+
+  <h3>La ventana se ve rara o se descuadra</h3>
+
+  <p>
+    Casi siempre es un <code>custom.css</code> con una regla que estira algo más
+    de lo que debería: un <code>width</code> enorme, un <code>padding</code>
+    desmedido, un <code>position</code> absoluto mal colocado.
+  </p>
+
+  <p>La salida rápida es borrar el archivo entero:</p>
+
+  <pre is:raw><code>rm skins/sepia/custom.css</code></pre>
+
+  <p>
+    Y si lo que quieres es deshacer la skin entera, borra la carpeta. O pon
+    <code>skinPath=""</code> en <code>config.txt</code> y vuelves a la de
+    fábrica sin borrar nada.
+  </p>
+
+  <h3>El texto de la nota no cambia de aspecto</h3>
+
+  <p>
+    Los <code>.txt</code> no llegan al contenido de la nota. Los títulos, las
+    citas, el código y los enlaces de dentro del editor se cambian con
+    <code>custom.css</code>, y solo con CSS. Está en <a href="#css">Cambiarlo
+    todo con CSS</a>.
+  </p>
+
+  <h3>Y si nada de esto es</h3>
+
+  <p>
+    Entonces probablemente el problema sea de permisos: la carpeta está en un
+    sitio donde Xenner no puede escribir, o no puede leer. Pruébala en la
+    carpeta <code>skins/</code>, que es donde tiene permiso seguro, y si allí
+    funciona, es cosa de la carpeta donde la tienes.
+  </p>
+
+  <h2 id="limites">Lo que no se puede</h2>
+
+  <p>Para que nadie lo intente y lo considere un fallo:</p>
+
+  <ul>
+    <li>
+      <strong>Añadir, quitar o mover elementos de la interfaz.</strong> Una skin
+      cambia el aspecto, no la estructura. No se puede esconder la barra lateral
+      del todo ni poner un panel nuevo. Lo que sí se puede es mover, encoger o
+      hacer transparente un trozo.
+    </li>
+    <li>
+      <strong>Descargar nada.</strong> Ni imágenes, ni letras, ni hojas de
+      estilo. Todo tiene que estar en <code>assets/</code>. Y eso no es un
+      capricho: es exactamente lo que impide que la skin que instalas hable con
+      internet.
+    </li>
+    <li>
+      <strong>Leer archivos de tu disco.</strong> Un <code>url()</code> solo
+      puede mirar dentro de <code>assets/</code>. Ni tus archivos de otros
+      sitios, ni nada del sistema.
+    </li>
+    <li>
+      <strong>Cambiar el comportamiento.</strong> No hay JavaScript, y no se
+      puede con CSS: una skin no puede saber qué estás escribiendo ni mandarlo a
+      ninguna parte.
+    </li>
+    <li>
+      <strong>Un SVG que se mueva o se anime.</strong> Un SVG dentro de un hueco
+      de imagen se dibuja quieto: es una foto, no una película. Si necesitas
+      movimiento, es un GIF, y solo si el formato lo admite.
+    </li>
+  </ul>
+
+  <h3>Para compartirla</h3>
+
+  <p>
+    Una skin es una carpeta. Se copia, se comprime y se pasa a quien quieras.
+    Quien la reciba la deja en <code>skins/</code> y le aparece en la lista. Si
+    quieres que vaya a la carpeta donde Xenner guarda las skins propias —y así no
+    se pierde al reinstalar—, esa ruta se ve en la propia ventana de la
+    aplicación y depende del sistema operativo.
+  </p>
+
+  <p>
+    Pon siempre tu nombre en <code>author=</code> de <code>skin.txt</code>. Es
+    la primera línea de la lista y se lo agradece a quien la hizo.
+  </p>
+
+  <div class="callout callout--tip">
+    <span class="callout__label">Si algo se rompe, se puede volver atrás</span>
+    <p>
+      Borra <code>custom.css</code> y todo vuelve a lo que digan los
+      <code>.txt</code>. Y si también quieres volver atrás en eso, borra los
+      <code>.txt</code> y tienes la Xenner de fábrica. Siempre se puede
+      deshacer, así que no hay nada que temer al probar.
+    </p>
+  </div>
+
+  <h3>Skins de ejemplo para copiar</h3>
+
+  <p>
+    Vienen cuatro, y están escritas para que se copien.
+    <code>pixel/</code> es retro, con un marco dibujado alrededor de cada nota y
+    un icono propio; <code>aurora/</code> no tiene ni una imagen y aun así se ve
+    distinta, porque usa degradados y transiciones;
+    <code>glass-default/</code> y <code>webcore/</code> son las dos clásicas.
+    Las cuatro están comentadas línea a línea, que es la mejor forma de aprender
+    qué se puede hacer.
+  </p>
+</GuideLayout>
