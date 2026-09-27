@@ -11,6 +11,7 @@ import {
 
 import { DRAWING_TOOLS, isDrawingTool } from "../../data/drawing";
 import {
+  beginMarquee,
   CANVAS_HEIGHT,
   CANVAS_WIDTH,
   createDrawingId,
@@ -19,13 +20,18 @@ import {
   drawingShapeBounds,
   drawingShapeHits,
   drawingViewBox,
+  marqueeBounds,
+  type Marquee,
   MIN_PAPER_WIDTH,
-  rectFromTo,
-  rectOverlapsShape,
+  marqueeHasArea,
+  mergeSelection,
+  moveMarquee,
   normalizePaper,
   parseDrawingPaper,
   parseDrawingSvg,
   serializeDrawing,
+  shapesInBounds,
+  toggleSelection,
 } from "../../editor/drawing";
 import styles from "../../styles/components/WhiteboardBlock.module.css";
 import type { DrawingShape, DrawingTool, Point, ShapeBounds, ShapeKind } from "../../types/drawing";
@@ -237,7 +243,7 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
   const [shapes, setShapes] = createSignal<DrawingShape[]>(initialShapes);
   const [paper, setPaper] = createSignal<ShapeBounds>(initialPaper);
   const [selection, setSelection] = createSignal<string[]>([]);
-  const [marquee, setMarquee] = createSignal<ShapeBounds | null>(null);
+  const [marquee, setMarquee] = createSignal<Marquee | null>(null);
   const [draft, setDraft] = createSignal<DrawingShape | null>(null);
   const [drag, setDrag] = createSignal<DragState | null>(null);
   const [resize, setResize] = createSignal<ResizeState | null>(null);
@@ -458,8 +464,13 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
         // Clic en vacío con la herramienta de selección: el rectángulo marca el
         // área, igual que en Paint. Lo que quede dentro se selecciona.
         if (!event.shiftKey) setSelection([]);
-        setMarquee({ x: point.x, y: point.y, width: 0, height: 0 });
+        setMarquee(beginMarquee(point));
         capturePointer(event);
+        return;
+      }
+      // Shift + clic añade o quita la figura sin arrastrar nada.
+      if (event.shiftKey) {
+        setSelection(toggleSelection(selection(), [hit.id]));
         return;
       }
       // Pulsar sobre una figura ya seleccionada arrastra el grupo entero.
@@ -554,8 +565,7 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
     }
     const activeMarquee = marquee();
     if (activeMarquee) {
-      const point = pointFromEvent(event);
-      setMarquee(rectFromTo(activeMarquee, point));
+      setMarquee(moveMarquee(activeMarquee, pointFromEvent(event)));
       return;
     }
     const activeDraft = draft();
@@ -594,14 +604,14 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
    * elegidas si se empezó con Shift.
    */
   function applyMarquee(): void {
-    const area = marquee();
+    const gesture = marquee();
     setMarquee(null);
-    if (!area) return;
-    const inside = shapes()
-      .filter((shape) => rectOverlapsShape(area, shape))
-      .map((shape) => shape.id);
+    if (!gesture) return;
+    // Un clic sin recorrido es una deselección, no un rectángulo vacío.
+    if (!marqueeHasArea(gesture)) return;
+    const inside = shapesInBounds(shapes(), marqueeBounds(gesture)).map((shape) => shape.id);
     if (inside.length === 0) return;
-    setSelection([...new Set([...selection(), ...inside])]);
+    setSelection(mergeSelection(selection(), inside));
   }
 
   function onPointerUp(event: PointerEvent): void {
@@ -1196,16 +1206,19 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
             }}
           </Show>
           <Show when={marquee()}>
-            {(area) => (
-              <rect
-                class={styles.marquee}
-                x={area().x}
-                y={area().y}
-                width={area().width}
-                height={area().height}
-                pointer-events="none"
-              />
-            )}
+            {(gesture) => {
+              const area = (): ShapeBounds => marqueeBounds(gesture());
+              return (
+                <rect
+                  class={styles.marquee}
+                  x={area().x}
+                  y={area().y}
+                  width={area().width}
+                  height={area().height}
+                  pointer-events="none"
+                />
+              );
+            }}
           </Show>
           </svg>
           <Show when={textEdit()}>

@@ -164,10 +164,18 @@ convierten en clases globales de aplicación.
   selección, arrastrar sobre el lienzo vacío dibuja un rectángulo (el lazo de
   Paint) y marca las figuras que toca, criterio de Miro y Figma. Pulsar sobre
   cualquier figura ya elegida arrastra el grupo entero; cada figura se mueve
-  desde su posición original para que el desplazamiento no se acumule. Borrar,
-  duplicar, recolorear y mover con flechas operan sobre toda la selección. Los
-  tiradores de tamaño solo aparecen con una única figura, porque estirar un
-  grupo exigiría decidir qué se mantiene fijo.
+  desde su posición original para que el desplazamiento no se acumule. Shift
+  añade o quita figuras. Borrar, duplicar, recolorear y mover con flechas operan
+  sobre toda la selección. Los tiradores de tamaño solo aparecen con una única
+  figura, porque estirar un grupo exigiría decidir qué se mantiene fijo.
+- El rectángulo de selección vive en `editor/drawing.ts` como
+  `Marquee { origin, corner }`, NUNCA como rectángulo normalizado. El fallo que
+  lo hacía funcionar solo hacia abajo: al guardar el rectángulo ya normalizado, su
+  `x`/`y` pasan a ser el nuevo origen en cuanto el puntero cruza el punto de
+  partida, y el área medida se queda corta (arrastrando 200×120 reportaba
+  140×80). Guardando el origen aparte e inmutable, las cuatro direcciones dan el
+  mismo rectángulo. `clampToCanvas` acota origen y puntero, y `marqueeHasArea`
+  distingue un arrastre de un clic con 4 unidades de margen.
 - El papel del lienzo es redimensionable: la esquina inferior derecha arrastra
   el borde, y el rectángulo elegido se serializa como `width`/`height` +
   `viewBox` del propio SVG, así que sobrevive al guardado. El `viewBox` es la

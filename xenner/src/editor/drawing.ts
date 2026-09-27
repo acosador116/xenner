@@ -188,23 +188,68 @@ export function parseDrawingPaper(svg: string): ShapeBounds | null {
   return normalizePaper({ x, y, width, height });
 }
 
-/**
- * Rectángulo de selección con origen y esquina opuestos. Se normaliza a tamaño
- * positivo, para que arrastrar hacia arriba o hacia la izquierda funcione igual.
- */
-export function rectFromTo(origin: Point, corner: Point): ShapeBounds {
+/* ------------------------------------------------------------------------- *
+ * Rectángulo de selección (el lazo de Paint)
+ *
+ * La clave de que funcione en las cuatro direcciones es NO guardar el
+ * rectángulo ya normalizado: si el origen se sustituye por su `min`/`max`, al
+ * arrastrar hacia arriba o a la izquierda el punto de partida se pierde a la
+ * primera vez que el puntero cruza el origen y el área deja de crecer. Aquí el
+ * origen se guarda aparte y es inmutable durante todo el gesto; el rectángulo
+ * se deriva de él cada vez, que siempre da el mismo resultado para las cuatro
+ * direcciones.
+ * ------------------------------------------------------------------------- */
+
+export interface Marquee {
+  /** Punto fijo donde empezó el arrastre. No cambia durante el gesto. */
+  origin: Point;
+  /** Punto por el que va el puntero ahora mismo. */
+  corner: Point;
+}
+
+/** Por debajo de este tamaño en unidades de dibujo, el gesto es un clic. */
+export const MARQUEE_MIN_SIZE = 4;
+
+/** Mantiene un punto dentro del lienzo, que es donde existen las coordenadas. */
+export function clampToCanvas(point: Point): Point {
   return {
-    x: Math.min(origin.x, corner.x),
-    y: Math.min(origin.y, corner.y),
-    width: Math.abs(corner.x - origin.x),
-    height: Math.abs(corner.y - origin.y),
+    x: Math.max(0, Math.min(CANVAS_WIDTH, point.x)),
+    y: Math.max(0, Math.min(CANVAS_HEIGHT, point.y)),
   };
 }
 
+/** Empieza un gesto en `point`, ya acotado al lienzo. */
+export function beginMarquee(point: Point): Marquee {
+  const origin = clampToCanvas(point);
+  return { origin, corner: origin };
+}
+
+/** Lleva el gesto hasta `point`. El origen se conserva intacto. */
+export function moveMarquee(marquee: Marquee, point: Point): Marquee {
+  return { origin: marquee.origin, corner: clampToCanvas(point) };
+}
+
 /**
- * ¿El rectángulo toca la figura? Es el criterio de las pizarras (Miro, Figma):
- * se selecciona lo que se roza, no solo lo que cabe entero dentro.
+ * Rectángulo del gesto, con origen y tamaño siempre positivos. Es la misma
+ * área llegue el puntero por la esquina que llegue.
  */
+export function marqueeBounds(marquee: Marquee): ShapeBounds {
+  return {
+    x: Math.min(marquee.origin.x, marquee.corner.x),
+    y: Math.min(marquee.origin.y, marquee.corner.y),
+    width: Math.abs(marquee.corner.x - marquee.origin.x),
+    height: Math.abs(marquee.corner.y - marquee.origin.y),
+  };
+}
+
+/** ¿Ha sido un arrastre de verdad o solo un clic? */
+export function marqueeHasArea(marquee: Marquee, minimum = MARQUEE_MIN_SIZE): boolean {
+  const bounds = marqueeBounds(marquee);
+  return bounds.width >= minimum || bounds.height >= minimum;
+}
+
+/** ¿El rectángulo toca la figura? Es el criterio de las pizarras (Miro, Figma):
+ *  se selecciona lo que se roza, no solo lo que cabe entero dentro. */
 export function rectOverlapsShape(rect: ShapeBounds, shape: DrawingShape): boolean {
   const box = drawingShapeBounds(shape);
   return (
@@ -213,6 +258,26 @@ export function rectOverlapsShape(rect: ShapeBounds, shape: DrawingShape): boole
     box.y < rect.y + rect.height &&
     box.y + box.height > rect.y
   );
+}
+
+/** Figuras que toca el área, en el orden en que están en el lienzo. */
+export function shapesInBounds(shapes: DrawingShape[], rect: ShapeBounds): DrawingShape[] {
+  return shapes.filter((shape) => rectOverlapsShape(rect, shape));
+}
+
+/** Une lo ya elegido con lo nuevo, sin repetir. */
+export function mergeSelection(current: readonly string[], added: readonly string[]): string[] {
+  return [...new Set([...current, ...added])];
+}
+
+/** Añade o quita figuras de la selección, para el clic con Shift. */
+export function toggleSelection(current: readonly string[], ids: readonly string[]): string[] {
+  const next = new Set(current);
+  for (const id of ids) {
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+  }
+  return [...next];
 }
 
 export function drawingShapeHits(shape: DrawingShape, point: Point): boolean {  if (shape.kind === "path") {
