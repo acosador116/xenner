@@ -1,11 +1,15 @@
 {
-  "name": "xenner",
-  "short_name": "xenner",
-  "description": "Editor de notas desktop con la interfaz en archivos de texto plano. Skins TXT, biblioteca local de Markdown, sin cuentas ni nube.",
+  "name": "Xenner — editor de notas en Markdown",
+  "short_name": "Xenner",
+  "description": "Creador de notas de escritorio que guarda cada nota como un archivo Markdown en tu carpeta. Pizarra, skins en archivos de texto e historial, sin cuentas ni nube.",
+  "lang": "es",
+  "id": "/",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "background_color": "#fbfaf8",
+  "theme_color": "#fbfaf8",
+  "categories": ["productivity", "utilities"],
   "icons": [
     {
       "src": "/favicon.svg",

@@ -1,8 +1,13 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { GUIDE } from '../data/guide';
 ---
 
 <BaseLayout title="Página no encontrada" description="Esta página no existe." noindex>
+  <Header />
+
   <main class="nf" id="contenido">
     <div class="shell nf__inner">
       <p class="label">Error 404</p>
@@ -13,8 +18,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <div class="nf__cta">
         <a class="cta cta--fill" href="/">Volver al inicio</a>
       </div>
+      <ul class="nf__links">
+        {GUIDE.map((page) => <li><a href={page.path}>{page.label}</a></li>)}
+      </ul>
     </div>
   </main>
+
+  <Footer />
 </BaseLayout>
 
 <style>
@@ -46,5 +56,24 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
   .nf__cta {
     margin-top: 0.6rem;
+  }
+
+  .nf__links {
+    margin-top: 2.25rem;
+    padding-top: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1.5rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .nf__links a {
+    color: var(--ink-2);
+    font-size: var(--t-sm);
+    text-decoration: none;
+  }
+
+  .nf__links a:hover {
+    color: var(--accent-ink);
   }
 </style>

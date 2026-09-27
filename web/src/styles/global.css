@@ -326,3 +326,99 @@ ol {
     --gutter: 1.15rem;
   }
 }
+
+/* ---------- prosa de la guía ----------
+   Las páginas de la guía escriben su texto dentro de <slot>, así que sus
+   estilos no pueden vivir en el <style> con ámbito del layout. Van aquí, en
+   global, con la misma escala y los mismos tintas que el resto del sitio. */
+
+.prose {
+  max-width: var(--measure);
+}
+
+.prose > * + * {
+  margin-top: 1.15rem;
+}
+
+.prose h2 {
+  margin-top: 3rem;
+  font-family: var(--serif);
+  font-size: clamp(1.625rem, 3.2vw, 2rem);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.prose h3 {
+  margin-top: 2rem;
+  font-size: var(--t-md);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.prose p,
+.prose li {
+  color: var(--ink-2);
+  font-size: var(--t-base);
+  line-height: 1.75;
+}
+
+.prose strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.prose a {
+  color: var(--accent-ink);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: 1px;
+}
+
+.prose a:hover {
+  text-decoration-thickness: 2px;
+}
+
+.prose ul,
+.prose ol {
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.prose li::marker {
+  color: var(--line-ui);
+}
+
+.prose code {
+  padding: 0.12em 0.4em;
+  border-radius: 6px;
+  color: var(--ink);
+  background: var(--sunken);
+  font-family: var(--mono);
+  font-size: 0.9em;
+}
+
+.prose pre {
+  padding: 1rem 1.15rem;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--sunken);
+}
+
+.prose pre code {
+  padding: 0;
+  background: none;
+  font-size: var(--t-sm);
+  line-height: 1.6;
+}
+
+.prose blockquote {
+  padding-left: 1.15rem;
+  border-left: 2px solid var(--line-strong);
+  color: var(--ink-2);
+  font-family: var(--serif);
+  font-size: var(--t-md);
+}
