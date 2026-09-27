@@ -1,7 +1,6 @@
 ---
 import Brand from './Brand.astro';
-
-const repo = 'https://github.com/acosador116/xenner';
+import { REPO } from '../config';
 ---
 
 <header class="top">
@@ -9,12 +8,13 @@ const repo = 'https://github.com/acosador116/xenner';
     <Brand />
 
     <nav class="top__nav" aria-label="Navegación principal">
-      <a href="#editor">Editor</a>
-      <a href="#organize">Carpetas</a>
-      <a href="#look">Apariencia</a>
+      <a href="/#editor">Editor</a>
+      <a href="/#organize">Carpetas</a>
+      <a href="/#look">Apariencia</a>
+      <a href="/#guia">Guía</a>
     </nav>
 
-    <a class="cta cta--fill top__cta" href={repo} target="_blank" rel="noreferrer">
+    <a class="cta cta--fill top__cta" href={REPO} target="_blank" rel="noreferrer">
       Ver en GitHub
     </a>
 
@@ -26,10 +26,11 @@ const repo = 'https://github.com/acosador116/xenner';
         </svg>
       </summary>
       <nav aria-label="Navegación móvil">
-        <a href="#editor">Editor</a>
-        <a href="#organize">Carpetas</a>
-        <a href="#look">Apariencia</a>
-        <a href={repo} target="_blank" rel="noreferrer">GitHub ↗</a>
+        <a href="/#editor">Editor</a>
+        <a href="/#organize">Carpetas</a>
+        <a href="/#look">Apariencia</a>
+        <a href="/#guia">Guía</a>
+        <a href={REPO} target="_blank" rel="noreferrer">GitHub ↗</a>
       </nav>
     </details>
   </div>
