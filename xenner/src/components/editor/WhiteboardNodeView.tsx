@@ -76,13 +76,11 @@ class WhiteboardNodeView implements NodeView {
     this.dom = document.createElement("div");
     this.dom.className = styles.node;
     this.dom.contentEditable = "false";
-    this.dom.draggable = view.editable;
 
     this.preview = document.createElement("button");
     this.preview.type = "button";
     this.preview.className = styles.preview;
     this.preview.disabled = !view.editable;
-    this.preview.draggable = view.editable;
     this.preview.title = "Doble clic para editar · arrastrar para mover";
     this.preview.setAttribute("aria-label", "Doble clic para editar el dibujo");
     this.preview.addEventListener("dblclick", (event) => {
@@ -110,6 +108,7 @@ class WhiteboardNodeView implements NodeView {
     this.editorHost = document.createElement("div");
     this.editorHost.className = styles.editorHost;
     this.dom.append(this.preview, this.editorHost);
+    this.syncDraggable();
     this.updatePreview();
     if (initialNode.attrs.draft) queueMicrotask(() => void this.startEditing());
   }
@@ -118,11 +117,24 @@ class WhiteboardNodeView implements NodeView {
     if (node.type !== this.currentNode.type) return false;
     this.currentNode = node;
     this.preview.disabled = !this.view.editable;
-    this.dom.draggable = this.view.editable;
-    this.preview.draggable = this.view.editable;
+    this.syncDraggable();
     if (node.attrs.draft && !this.editing && !this.starting) queueMicrotask(() => void this.startEditing());
     if (!this.editing) this.updatePreview();
     return true;
+  }
+
+  /**
+   * El nodo solo se arrastra cuando no hay lienzo abierto dentro.
+   *
+   * Con el editor montado dentro de `dom`, un `draggable` en el ancestro
+   * convierte cualquier arrastre que empiece en su interior en un arrastre
+   * nativo del nodo entero. Eso rompía la barra de grosor: al arrastrar el
+   * cursor se movía la pizarra en vez de cambiar el trazo.
+   */
+  private syncDraggable(): void {
+    const draggable = this.view.editable && !this.editing && !this.starting;
+    this.dom.draggable = draggable;
+    this.preview.draggable = draggable;
   }
 
   selectNode(): void {
@@ -208,6 +220,9 @@ class WhiteboardNodeView implements NodeView {
     const src = typeof this.currentNode.attrs.src === "string" ? this.currentNode.attrs.src : "";
     if (this.editing || this.starting || !src || !this.view.editable || this.view.isDestroyed) return;
     this.starting = true;
+    // Antes de que llegue el lienzo hay que quitar el arrastre: mientras monta,
+    // un gesto rápido sobre la barra de grosor todavía movería el nodo.
+    this.syncDraggable();
     // `starting` ya cuenta para syncVisibility, pero lo aplicamos ya para que el
     // lienzo nunca llegue a coexistir un frame con la vista previa del dibujo.
     this.preview.hidden = true;
@@ -258,6 +273,7 @@ class WhiteboardNodeView implements NodeView {
       // `starting` contaba para la visibilidad de la vista previa. Al bajar hay
       // que volver a decidir, o un fallo al abrir el lienzo dejaría el dibujo
       // oculto sin nada en su lugar.
+      this.syncDraggable();
       this.updatePreview();
     }
   }
@@ -296,6 +312,8 @@ class WhiteboardNodeView implements NodeView {
     this.editing = false;
     this.unregisterSession?.();
     this.unregisterSession = null;
+    // Sin lienzo dentro, el nodo vuelve a poder arrastrarse.
+    this.syncDraggable();
     // `editing` ya es false, así que updatePreview -> syncVisibility decide si
     // la vista previa vuelve a ocupar el lugar del lienzo.
     this.updatePreview();

@@ -899,6 +899,9 @@ export function WhiteboardBlock(props: WhiteboardBlockProps) {
     const controls = [...container.querySelectorAll<HTMLButtonElement>("button:not(:disabled)")];
     if (!controls.length) return;
     const current = controls.indexOf(document.activeElement as HTMLButtonElement);
+    // La barra de grosor y el selector de color no son botones: con las flechas
+    // deben cambiar su valor, no llevar el foco al siguiente control.
+    if (current === -1) return;
     let next = current;
     if (event.key === "Home") next = 0;
     else if (event.key === "End") next = controls.length - 1;
