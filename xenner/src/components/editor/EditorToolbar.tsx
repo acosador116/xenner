@@ -175,6 +175,14 @@ export function EditorToolbar(props: EditorToolbarProps) {
       aria-orientation="horizontal"
       aria-label="Acciones del editor"
       onKeyDown={(event) => moveToolbarFocus(event, event.currentTarget)}
+      // El dock vive fuera del contenteditable. Si el botón recibiera el foco
+      // al pulsarlo, el editor perdería el cursor de texto y escribir después
+      // se sentiría roto; preventDefault en mousedown lo conserva.
+      onMouseDown={(event) => {
+        const target = event.target;
+        if (target instanceof HTMLElement && target.closest("input, textarea")) return;
+        event.preventDefault();
+      }}
     >
       <div class={styles.anchor}>
         <button

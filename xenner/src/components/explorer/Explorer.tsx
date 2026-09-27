@@ -41,6 +41,7 @@ interface ExplorerProps {
   onCopyMarkdown(path: string): void;
   onCut(path: string): void;
   onPaste(parent: string): void;
+  onShowHistory(path: string): void;
 }
 
 interface NodeProps extends ExplorerProps {
@@ -353,6 +354,7 @@ export function Explorer(props: ExplorerProps) {
             onRename={(path) => props.onRename(path)}
             onDelete={(path) => props.onDelete(path)}
             onStartCreation={(kind, parent) => props.onStartCreation(kind, parent)}
+            onShowHistory={(path) => props.onShowHistory(path)}
           />
         )}
       </Show>

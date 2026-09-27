@@ -43,14 +43,21 @@ pueden mostrar como enlaces, pero no se incrustan de origen.
 1. La persona pulsa **Nueva nota**.
 2. Xenner crea internamente un `.md` único y abre directamente el editor; no se
    solicita un nombre de archivo.
-3. El campo superior de la página representa el nombre del archivo. Al
-   confirmarlo, el archivo se renombra y el título visible se actualiza con él.
+3. El campo superior de la página representa el nombre del archivo. Se
+   renombra **al perder el foco o al pulsar Enter**, nunca en cada pulsación:
+   cada pulsación renombraba el archivo y la recarga posterior sacaba el foco
+   del input a media palabra. Escape revierte el borrador.
 4. Si la biblioteca está vacía, la aplicación crea y abre automáticamente una
    nota sin título al entrar para que el editor esté siempre listo.
 5. El nombre del archivo es la única fuente del título. El primer H1 se conserva
    como espejo Markdown para mantener el formato portable, pero nunca como
    metadato independiente del nombre.
 6. Antes de cambiar de nota se vacía la cola de guardado para evitar cruces.
+7. El menú contextual de una nota ofrece **Últimos cambios**: la sesión de
+   versiones guardadas desde Xenner, con vista previa, diferencia de tamaño y
+   restauración. Revertir a una versión anterior la devuelve al archivo con la
+   revisión leída, y antes registra el contenido actual para que el propio
+   revertimiento se pueda deshacer.
 
 La nota no depende de una entrada `localStorage`: ese formato anterior solo se
 usará una vez como origen de migración y se conservará como respaldo.
@@ -117,12 +124,18 @@ relativo. El editor de lienzo tendrá como mínimo:
 - texto;
 - color, grosor y eliminación;
 - deshacer/rehacer;
+- redimensionar el papel arrastrando la esquina inferior derecha;
 - guardar/cerrar.
 
 Al insertar un dibujo, Milkdown conservará una referencia Markdown al SVG. Al
 volver a abrirlo, Xenner recognize el recurso y permite editar el mismo archivo
 SVG. La sanitización de SVG eliminate scripts, enlaces externos, handlers y
 elementos HTML no permitidos antes de leer o mostrar un recurso.
+
+El dibujo se inserta **donde está el cursor de texto**, no al final de la nota.
+Para conseguirlo el dock flotante no roba el foco al `contenteditable` y, si la
+selección no es de texto, el editor repone la última posición válida antes de
+insertar.
 
 ## 7. Apariencia y skins
 
@@ -139,12 +152,15 @@ La sección **Apariencia** controla opciones ortogonales a la skin:
 - densidad de interfaz.
 
 Las preferencias se guardan de forma validada y se aplican como variables CSS.
-El modo claro/oscuro solo altera la skin base embebida; una skin de usuario
-declara su propio modo para evitar результаados ambiguos.
+El modo claro/oscuro solo conmuta `data-color-scheme` en `<html>`, que hace que
+`global.css` intercambie la paleta base; una skin de usuario declara su propio
+modo para evitar resultados ambiguos.
 
 ### 7.2 Skin base predeterminada
 
-La skin embebida usa una interfaz neutra inspirada en herramientas de escritura
+La skin embebida vive en `src/styles/global.css` como bloque de tokens
+`--skin-*` (claro) y su variante `:root[data-color-scheme="dark"]`, no en
+TypeScript. Usa una interfaz neutra inspirada en herramientas de escritura
 moderna, no en una superficie decorativa:
 
 - superficies blancas o gris carbón;
@@ -154,9 +170,14 @@ moderna, no en una superficie decorativa:
 - controles de 6–10 px que ganan superficie únicamente al interactuar.
 
 La selección de colores sigue pasando por variables de skin, nunca por colores
-hardcodeados en los componentes.
+hardcodeados en los componentes. Una skin TXT solo sobreescribe las claves que
+declara; el resto lo resuelve el CSS según el modo activo.
 
 ### 7.3 Catálogo
+
+El modal de configuración tiene navegación lateral con una línea de descripción
+por sección, cabecera con eyebrow y cierre, y el contenido agrupado en tarjetas
+divididas por líneas. Todo sale de tokens `--skin-*`; ninguna clase fija color.
 
 El modal de configuración tendrá tres secciones:
 

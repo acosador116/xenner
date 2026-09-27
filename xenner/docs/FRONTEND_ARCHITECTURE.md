@@ -14,13 +14,13 @@ src/
   editor/              dominio puro: rutas, color, figuras y drawings
   notes/               modelo y compatibilidad legacy
   services/            Tauri, localStorage, assets, apariencia y notificaciones
-  skin/                parser y skin base embebida
+  skin/                parser del formato TXT y catálogo de paletas
   styles/
-    global.css         reset, html/body y tokens globales
+    global.css         reset, html/body y TODOS los tokens
     components/*.module.css
   types/               contratos compartidos sin dependencias de runtime
   utils/               funciones auxiliares sin estado
-  workspace/           estado, persistencia Markdown, árbol y note format
+  workspace/           estado, persistencia Markdown, árbol, note format e historial
 ```
 
 `src/index.tsx` solo monta la aplicación e importa `styles/global.css`.
@@ -58,9 +58,23 @@ Contiene exclusivamente:
 - `.sr-only`;
 - estado global `disabled`;
 - reduced motion;
-- tokens estructurales como z-index y duraciones.
+- **todos los tokens**: los estructurales (z-index, duraciones), los de lectura
+  que escribe Apariencia (`--skin-editor-size`, `--skin-content-width`, …) y la
+  paleta base `--skin-<componente>-<clave>` en modo claro y su variante
+  `:root[data-color-scheme="dark"]`.
 
-No contiene selectores de componentes ni una paleta estática `--skin-*`.
+No contiene selectores de componentes.
+
+`global.css` es la única fuente de verdad de la paleta. Un TXT de skin o el
+creador de Ajustes no redefinen el bloque: escriben la variable concreta en el
+estilo inline de `<html>`, que gana por cascada. Por eso:
+
+- una skin parcial nunca deja un componente sin estilo, sin código de mezcla que
+  mantenga una segunda copia de la paleta en TypeScript;
+- cambiar de modo claro/oscuro es conmutar `data-color-scheme` y no releer ningún
+  TXT;
+- el frontend consume `var(--skin-*)` y nada más. Si un componente necesita un
+  color, se declara aquí y se puede sobreescribir desde una skin.
 
 ### CSS Modules
 
@@ -83,13 +97,39 @@ convierten en clases globales de aplicación.
 
 - `workspace/store.ts` conserva el estado reactivo y la cola de autoguardado; el
   nombre del archivo es la fuente del título y el input superior lo renombra.
+  El título se renombra al perder el foco del input, nunca en cada pulsación:
+  renombrar reescribe el archivo y una recarga por palabra se sentía rota.
 - El explorer usa drag-and-drop para mover entradas y un menú contextual para
-  copiar Markdown, cortar/pegar, renombrar, crear y eliminar.
+  copiar Markdown, cortar/pegar, renombrar, crear, eliminar y abrir
+  **Últimos cambios** de una nota.
+- `workspace/history.ts` es el dominio puro del historial (coalescencia de
+  guardados, límites y etiquetas relativas) y `services/noteHistory.ts` su
+  persistencia en `localStorage`. `store.ts` registra una versión por guardado
+  confirmado y expone `restoreNoteBody`, que antes de escribir vuelve a
+  registrar el cuerpo actual: revertir también se puede revertir.
+- El dock flotante del editor nunca roba el foco al `contenteditable`
+  (`preventDefault` en `mousedown`). Gracias a eso el cursor de texto sobrevive
+  al clic y los bloques insertados (pizarra, imagen) caen donde se estaba
+  escribiendo. `MarkdownEditor` además recuerda la última posición de cursor
+  válida y la repone antes de insertar, por si la selección fuese un
+  `NodeSelection`.
+- El hueco por debajo del texto de la columna devuelve el foco al editor al
+  pulsarlo, en lugar de dejar el cursor en el aire.
 - `services/workspace/` separa selección de gateway, adaptador Tauri, preview
   browser, estado preview y normalización de errores.
-- `services/skinLoader.ts` mantiene la cadena de fallback y publica variables
-  `--skin-*`; no se movió el formato TXT.
-- `services/appearance.ts` conserva preferencias y variables de lectura.
+- `services/skinLoader.ts` mantiene la cadena de fallback y publica las claves
+  `--skin-*` que define la skin activa como overrides inline; el resto lo
+  resuelve `global.css`. No se movió el formato TXT.
+- `services/appearance.ts` conserva preferencias y variables de lectura. Los
+  valores con los que arranca Xenner viven en `data/appearance.ts`, porque son
+  datos estáticos: el servicio los usa para sanear lo guardado y el modal para
+  ofrecer «Restablecer» solo cuando algo se ha apartado de ellos.
+- El texto de la interfaz nunca habla de implementación. Ni `global.css`, ni
+  `--skin-*`, ni tokens, ni «Hover» o «Superficie»: en Ajustes el concepto de
+  skin se llama **tema** y los colores se nombran por dónde se ven («Notas y
+  barras», «Al pasar el ratón»). Lo técnico se queda en SKIN_SPEC.md. La regla
+  sale de los patrones de Ajustes: los labels nombran la preferencia y las
+  descripciones explican el resultado, nunca repiten la etiqueta.
 - `services/toastService.ts` contiene estado y timers; `ToastRegion` solo
   renderiza y coordina animaciones de layout.
 - `services/editorAssets.ts` es la única frontera usada por el editor para
@@ -97,10 +137,50 @@ convierten en clases globales de aplicación.
 - `services/editorSession.ts` coordina el modo texto/pizarra, el autoguardado
   del whiteboard y la protección al cambiar de nota.
 - La pizarra es un nodo `whiteboard` de Milkdown con NodeView embebido en el
-  flujo de la nota. Se persiste como una imagen Markdown estándar bajo
+  flujo de la nota. El lienzo y la vista previa del dibujo comparten nodo, así
+  que `shouldShowDrawingPreview` (puro, en `editor/whiteboard.ts`) es la única
+  fuente de verdad de si la imagen se ve, y `WhiteboardNodeView.module.css`
+  necesita `.preview[hidden] { display: none }` explícito: el `display` de la
+  clase gana al `[hidden]` del navegador y sin él el lienzo se abriría debajo
+  del dibujo. Se persiste como una imagen Markdown estándar bajo
   `.assets/`; al cerrarse se muestra solo el dibujo, recortado a sus bounds,
   sin una pizarra vacía alrededor. Mientras se edita, el lienzo queda aislado
   del editor para que sus gestos no muevan la nota.
+- La barra flotante de formato de Crepe (`.milkdown-toolbar`) sale a los 20 ms
+  de seleccionar y tapa el texto. Se deja montada pero transparente y solo se
+  revela con `:hover` o `:focus-within`, de modo que sigue siendo alcanzable
+  con el puntero y con el teclado sin saltar a los ojos.
+- KaTeX es `white-space: nowrap`, así que una fórmula larga ensanchaba la
+  columna de lectura. `span[data-type="math_inline"]` y `.katex-display` quedan
+  acotados a `max-width: 100%` con desplazamiento horizontal interno, más una
+  red de seguridad `overflow-wrap: anywhere` en párrafos, listas y celdas.
+- En la pizarra, el texto en edición oculta su `<text>` del SVG: el input ocupa
+  su hueco con el mismo tamaño de fuente y el color de la figura, para que no
+  se lea dos veces superpuesto. Al arrastrar con el botón pulsado se dibuja el
+  rastro del puntero en una capa `pointer-events: none` que se desvanece al
+  soltar; nunca entra en el SVG ni en el historial de deshacer. Un clic en el
+  dibujo marca el nodo como activo con un contorno, sin desplazar el layout.
+- La pizarra selecciona en grupo como en un escritorio: con la herramienta de
+  selección, arrastrar sobre el lienzo vacío dibuja un rectángulo (el lazo de
+  Paint) y marca las figuras que toca, criterio de Miro y Figma. Pulsar sobre
+  cualquier figura ya elegida arrastra el grupo entero; cada figura se mueve
+  desde su posición original para que el desplazamiento no se acumule. Shift
+  añade o quita figuras. Borrar, duplicar, recolorear y mover con flechas operan
+  sobre toda la selección. Los tiradores de tamaño solo aparecen con una única
+  figura, porque estirar un grupo exigiría decidir qué se mantiene fijo.
+- El rectángulo de selección vive en `editor/drawing.ts` como
+  `Marquee { origin, corner }`, NUNCA como rectángulo normalizado. El fallo que
+  lo hacía funcionar solo hacia abajo: al guardar el rectángulo ya normalizado, su
+  `x`/`y` pasan a ser el nuevo origen en cuanto el puntero cruza el punto de
+  partida, y el área medida se queda corta (arrastrando 200×120 reportaba
+  140×80). Guardando el origen aparte e inmutable, las cuatro direcciones dan el
+  mismo rectángulo. `clampToCanvas` acota origen y puntero, y `marqueeHasArea`
+  distingue un arrastre de un clic con 4 unidades de margen.
+- El papel del lienzo es redimensionable: la esquina inferior derecha arrastra
+  el borde, y el rectángulo elegido se serializa como `width`/`height` +
+  `viewBox` del propio SVG, así que sobrevive al guardado. El `viewBox` es la
+  unión de papel y contenido para que redimensionar nunca recorte una figura, y
+  el historial de deshacer/rehacer de la pizarra incluye el tamaño del papel.
 - `BlockEdit` de Crepe proporciona el `+` contextual y el menú slash; el dock de
   Solid empieza por el selector de texto y deja imagen y pizarra como
   inserciones opcionales. El dock se oculta mientras una pizarra está activa.

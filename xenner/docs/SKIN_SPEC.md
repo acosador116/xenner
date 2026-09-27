@@ -89,19 +89,38 @@ en default. Así una skin puede ser de un solo TXT y seguir funcionando.
 1. Lee la preferencia de skin desde AppLocalData; si no existe, usa
    `config.txt` como fallback de compatibilidad.
 2. Para cada componente, intenta cargar la skin sistémica o de usuario
-   seleccionada; si falta un archivo o una clave, usa el fallback embebido
-   del modo claro/oscuro activo.
-3. Parsea a `Record<clave, valor>` y lo publica como variables CSS:
-   `--skin-<componente>-<clave>` en `:root` (ej. `--skin-note-blur`).
-4. Los componentes SolidJS **solo** usan esas variables, nunca colores
+   seleccionada. Un archivo ausente simplemente no aporta claves.
+3. Parsea a `Record<clave, valor>` y escribe **solo esas claves** como
+   variables `--skin-<componente>-<clave>` en el estilo inline de `:root`
+   (ej. `--skin-note-blur`).
+4. Los componentes SolidJS **solo** usan `var(--skin-*)`, nunca colores
    hardcodeados. Cambiar un TXT + recargar = nueva apariencia.
+
+### 5.1 Dónde vive el valor por defecto
+
+`src/styles/global.css` es la **única fuente de verdad** de los tokens:
+
+```css
+:root { --skin-note-background: #ffffff; /* ... modo claro */ }
+:root[data-color-scheme="dark"] { --skin-note-background: #202020; /* ... */ }
+```
+
+Consecuencias de esa arranging:
+
+- El estilo inline de `<html>` gana al bloque `:root` por cascada, así que la
+  clave que la skin define manda y **las que no define caen en el CSS**. Una
+  skin parcial nunca deja un componente sin estilo, sin código de mezcla.
+- Cambiar de modo claro/oscuro solo conmuta `data-color-scheme`; no hay que
+  releer ningún TXT ni reescribir variables. Es lo que hace
+  `services/appearance.ts`.
+- No existe una segunda copia de la paleta en TypeScript. Antes vivía en
+  `src/skin/defaultSkin.ts`, ya no.
 
 ## 6. Skin base embebida
 
-Vive en el código (`src/skin/defaultSkin.ts`) y tiene dos paletas neutras, una
-clara y otra oscura. La selección de modo se hace desde **Apariencia** y solo
-modifica la skin embebida; las claves ausentes de una skin de usuario reciben
-el fallback del modo activo.
+Vive en `src/styles/global.css` (no en código) y tiene dos paletas neutras, una
+clara y otra oscura, seleccionadas por `data-color-scheme`. Las claves ausentes
+de una skin de usuario reciben el valor del CSS del modo activo.
 
 La interfaz prioriza lectura y jerarquía antes que decoración:
 
@@ -128,6 +147,9 @@ vidrio, pero ya no es el fallback default de la aplicación.
   skin sistémica no reescribe el bundle de recursos.
 - Las skins creadas por la persona usuaria viven en AppLocalData, se escanean
   junto a las sistémicas y mantienen el mismo fallback.
+- El historial de versiones de las notas es otra sesión local aparte
+  (`xenner:note-history:v1`, máximo 25 versiones por nota). No es un backup: los
+  `.md` siguen siendo la fuente de verdad.
 
 ## 8. Transparencia de ventana y alcance del glass
 

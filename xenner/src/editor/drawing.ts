@@ -11,6 +11,13 @@ export const DRAWING_PADDING = 16;
 export const EMPTY_DRAWING_WIDTH = 320;
 export const EMPTY_DRAWING_HEIGHT = 200;
 export const DEFAULT_DRAWING_COLOR = "#6750a4";
+// El papel (el rectángulo visible del lienzo) se puede redimensionar arrastrando
+// su esquina inferior derecha. Estos son los límites en unidades de dibujo.
+// El mínimo incluye un margen extra: si no, al llegar al alto máximo la
+// esquina se quedaría pegada al borde y "arrastrar para agrandar" no crecería.
+export const MIN_PAPER_WIDTH = 320;
+export const MIN_PAPER_HEIGHT = 200;
+export const MIN_PAPER_GAP = 24;
 
 let shapeId = 0;
 let drawingSequence = 0;
@@ -109,8 +116,171 @@ export function drawingViewBox(shapes: DrawingShape[], padding = DRAWING_PADDING
   return drawingBounds(shapes, padding);
 }
 
-export function drawingShapeHits(shape: DrawingShape, point: Point): boolean {
-  if (shape.kind === "path") {
+/**
+ * Rectángulo visible del lienzo. El papel manda sobre el alto, pero la
+ * esquina inferior derecha también puede ser un tirador: se admite un margen
+ * extra para que "arrastrar para agrandar" siga creciendo cuando el alto ya no
+ * deja sitio.
+ */
+export function normalizePaper(paper: ShapeBounds): ShapeBounds {
+  const minimumWidth = Math.min(CANVAS_WIDTH, MIN_PAPER_WIDTH + MIN_PAPER_GAP);
+  const minimumHeight = Math.min(CANVAS_HEIGHT, MIN_PAPER_HEIGHT + MIN_PAPER_GAP);
+  const width = Math.min(
+    CANVAS_WIDTH,
+    Math.max(minimumWidth, Math.round(paper.width) || minimumWidth),
+  );
+  const height = Math.min(
+    CANVAS_HEIGHT,
+    Math.max(minimumHeight, Math.round(paper.height) || minimumHeight),
+  );
+  return {
+    x: Math.max(0, Math.min(Math.round(paper.x) || 0, CANVAS_WIDTH - width)),
+    y: Math.max(0, Math.min(Math.round(paper.y) || 0, CANVAS_HEIGHT - height)),
+    width,
+    height,
+  };
+}
+
+function unionBounds(left: ShapeBounds, right: ShapeBounds): ShapeBounds {
+  const x = Math.min(left.x, right.x);
+  const y = Math.min(left.y, right.y);
+  return {
+    x,
+    y,
+    width: Math.max(left.x + left.width, right.x + right.width) - x,
+    height: Math.max(left.y + left.height, right.y + right.height) - y,
+  };
+}
+
+/**
+ * Rectángulo que se serializa como viewBox: el papel elegido por la persona
+ * más el contenido dibujado, para que redimensionar el papel nunca recorte una
+ * figura. Sin papel, manda el contenido.
+ */
+export function drawingStage(
+  shapes: DrawingShape[],
+  paper?: ShapeBounds,
+  padding = DRAWING_PADDING,
+): ShapeBounds {
+  if (!paper) return drawingViewBox(shapes, padding);
+  const current = normalizePaper(paper);
+  // El lienzo vacío no aporta nada: unirlo solo inflaría el papel hasta el
+  // origen, que es justo lo que se acaba de arrastrar para evitar.
+  if (!shapes.length) return current;
+  return unionBounds(current, drawingBounds(shapes, padding));
+}
+
+/** Lee el papel de un SVG ya serializado; `null` si el SVG no es válido. */
+export function parseDrawingPaper(svg: string): ShapeBounds | null {
+  if (!svg || typeof DOMParser === "undefined") return null;
+  const parsed = new DOMParser().parseFromString(svg, "image/svg+xml");
+  if (parsed.querySelector("parsererror")) return null;
+  const root = parsed.documentElement;
+  if (root.tagName.toLowerCase() !== "svg") return null;
+  const box = (root.getAttribute("viewBox") ?? "").trim().split(/[\s,]+/).map(Number);
+  if (box.length !== 4 || !box.every((value) => Number.isFinite(value))) return null;
+  const [x, y, viewWidth, viewHeight] = box;
+  if (viewWidth <= 0 || viewHeight <= 0) return null;
+  // `width`/`height` llevan el papel real cuando difieren del viewBox; si no,
+  // el papel es exactamente el viewBox (dibujo que nunca se redimensionó).
+  const width = numberAttribute(root, "width", viewWidth);
+  const height = numberAttribute(root, "height", viewHeight);
+  return normalizePaper({ x, y, width, height });
+}
+
+/* ------------------------------------------------------------------------- *
+ * Rectángulo de selección (el lazo de Paint)
+ *
+ * La clave de que funcione en las cuatro direcciones es NO guardar el
+ * rectángulo ya normalizado: si el origen se sustituye por su `min`/`max`, al
+ * arrastrar hacia arriba o a la izquierda el punto de partida se pierde a la
+ * primera vez que el puntero cruza el origen y el área deja de crecer. Aquí el
+ * origen se guarda aparte y es inmutable durante todo el gesto; el rectángulo
+ * se deriva de él cada vez, que siempre da el mismo resultado para las cuatro
+ * direcciones.
+ * ------------------------------------------------------------------------- */
+
+export interface Marquee {
+  /** Punto fijo donde empezó el arrastre. No cambia durante el gesto. */
+  origin: Point;
+  /** Punto por el que va el puntero ahora mismo. */
+  corner: Point;
+}
+
+/** Por debajo de este tamaño en unidades de dibujo, el gesto es un clic. */
+export const MARQUEE_MIN_SIZE = 4;
+
+/** Mantiene un punto dentro del lienzo, que es donde existen las coordenadas. */
+export function clampToCanvas(point: Point): Point {
+  return {
+    x: Math.max(0, Math.min(CANVAS_WIDTH, point.x)),
+    y: Math.max(0, Math.min(CANVAS_HEIGHT, point.y)),
+  };
+}
+
+/** Empieza un gesto en `point`, ya acotado al lienzo. */
+export function beginMarquee(point: Point): Marquee {
+  const origin = clampToCanvas(point);
+  return { origin, corner: origin };
+}
+
+/** Lleva el gesto hasta `point`. El origen se conserva intacto. */
+export function moveMarquee(marquee: Marquee, point: Point): Marquee {
+  return { origin: marquee.origin, corner: clampToCanvas(point) };
+}
+
+/**
+ * Rectángulo del gesto, con origen y tamaño siempre positivos. Es la misma
+ * área llegue el puntero por la esquina que llegue.
+ */
+export function marqueeBounds(marquee: Marquee): ShapeBounds {
+  return {
+    x: Math.min(marquee.origin.x, marquee.corner.x),
+    y: Math.min(marquee.origin.y, marquee.corner.y),
+    width: Math.abs(marquee.corner.x - marquee.origin.x),
+    height: Math.abs(marquee.corner.y - marquee.origin.y),
+  };
+}
+
+/** ¿Ha sido un arrastre de verdad o solo un clic? */
+export function marqueeHasArea(marquee: Marquee, minimum = MARQUEE_MIN_SIZE): boolean {
+  const bounds = marqueeBounds(marquee);
+  return bounds.width >= minimum || bounds.height >= minimum;
+}
+
+/** ¿El rectángulo toca la figura? Es el criterio de las pizarras (Miro, Figma):
+ *  se selecciona lo que se roza, no solo lo que cabe entero dentro. */
+export function rectOverlapsShape(rect: ShapeBounds, shape: DrawingShape): boolean {
+  const box = drawingShapeBounds(shape);
+  return (
+    box.x < rect.x + rect.width &&
+    box.x + box.width > rect.x &&
+    box.y < rect.y + rect.height &&
+    box.y + box.height > rect.y
+  );
+}
+
+/** Figuras que toca el área, en el orden en que están en el lienzo. */
+export function shapesInBounds(shapes: DrawingShape[], rect: ShapeBounds): DrawingShape[] {
+  return shapes.filter((shape) => rectOverlapsShape(rect, shape));
+}
+
+/** Une lo ya elegido con lo nuevo, sin repetir. */
+export function mergeSelection(current: readonly string[], added: readonly string[]): string[] {
+  return [...new Set([...current, ...added])];
+}
+
+/** Añade o quita figuras de la selección, para el clic con Shift. */
+export function toggleSelection(current: readonly string[], ids: readonly string[]): string[] {
+  const next = new Set(current);
+  for (const id of ids) {
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+  }
+  return [...next];
+}
+
+export function drawingShapeHits(shape: DrawingShape, point: Point): boolean {  if (shape.kind === "path") {
     if (shape.points.length < 2) {
       return distanceToSegment(point, shape.points[0] ?? { x: shape.x1, y: shape.y1 }, { x: shape.x1, y: shape.y1 }) <= shape.width + 8;
     }
@@ -205,9 +375,13 @@ function numberForSvg(value: number): string {
   return Number.isFinite(value) ? String(Number(value.toFixed(3))) : "0";
 }
 
-export function serializeDrawing(shapes: DrawingShape[], drawingId = createDrawingId()): string {
+export function serializeDrawing(
+  shapes: DrawingShape[],
+  drawingId = createDrawingId(),
+  paper?: ShapeBounds,
+): string {
   const safeDrawingId = /^[a-zA-Z0-9_-]{1,100}$/.test(drawingId) ? drawingId : createDrawingId();
-  const view = drawingViewBox(shapes);
+  const view = drawingStage(shapes, paper);
   const body = shapes.map(shapeToSvg).join("");
   const markers = shapes
     .filter((shape) => shape.kind === "arrow")

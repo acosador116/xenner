@@ -3,13 +3,27 @@ import { invoke, isTauri } from "@tauri-apps/api/core";
 import { DEFAULT_SKIN_DRAFT } from "../data/skin.ts";
 import type { CreateSkinRequest, SkinDraft, SkinInfo } from "../types/skin";
 
-const FONT_STACKS: Record<string, string> = {
-  system: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+/**
+ * Los temas antiguos guardaban un identificador corto ("serif", "mono") en vez de
+ * la pila de CSS completa. Se siguen entendiendo para no romper lo ya creado.
+ */
+const LEGACY_FONT_STACKS: Record<string, string> = {
+  system: "system-ui, sans-serif",
   serif: 'Georgia, "Noto Serif", serif',
   mono: "ui-monospace, SFMono-Regular, Menlo, monospace",
   rounded: 'ui-rounded, "SF Pro Rounded", "Segoe UI", sans-serif',
   display: '"Avenir Next", "Trebuchet MS", sans-serif',
 };
+
+/** Normaliza a una pila de CSS segura, cayendo en la de sistema. */
+export function resolveFontStack(value: string): string {
+  const legacy = LEGACY_FONT_STACKS[value];
+  if (legacy) return legacy;
+  if (value.length > 0 && value.length <= 160 && /^[a-zA-Z0-9 ,.'\"()_-]+$/.test(value)) {
+    return value;
+  }
+  return LEGACY_FONT_STACKS.system;
+}
 
 const COLOR_PATTERN = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 
@@ -57,7 +71,7 @@ export function buildSkinComponents(draft: SkinDraft): CreateSkinRequest["compon
   const blur = safeNumber(draft.blur, 0, 48, DEFAULT_SKIN_DRAFT.blur);
   const borderWidth = safeNumber(draft.borderWidth, 0, 4, DEFAULT_SKIN_DRAFT.borderWidth);
   const border = borderWidth === 0 ? "1px solid transparent" : `${borderWidth}px solid ${borderColor}`;
-  const font = FONT_STACKS[draft.font] ?? FONT_STACKS.system;
+  const font = resolveFontStack(draft.font);
   const shadow = shadowValue(draft.shadow);
 
   return {

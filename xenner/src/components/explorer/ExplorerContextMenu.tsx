@@ -39,6 +39,7 @@ export interface ExplorerContextMenuProps {
   onRename(path: string): void;
   onDelete(path: string): void;
   onStartCreation(kind: CreationKind, parent: string): void;
+  onShowHistory(path: string): void;
 }
 
 function destinationFor(target: ExplorerContextTarget): string {
@@ -52,6 +53,7 @@ export function ExplorerContextMenu(props: ExplorerContextMenuProps) {
   function items(): MenuItem[] {
     if (props.target.kind === "note") {
       return [
+        { label: "Últimos cambios", action: () => props.onShowHistory(props.target.path) },
         { label: "Copiar Markdown", shortcut: "Ctrl+C", action: () => props.onCopyMarkdown(props.target.path) },
         { label: "Cortar para mover", shortcut: "Ctrl+X", action: () => props.onCut(props.target.path) },
         { label: "Renombrar", shortcut: "F2", action: () => props.onRename(props.target.path) },

@@ -12,8 +12,10 @@ import {
   drawingIdFromSvg,
   drawingViewBox,
   hasDrawingContent,
+  parseDrawingPaper,
   parseDrawingSvg,
 } from "../../editor/drawing";
+import { shouldShowDrawingPreview } from "../../editor/whiteboard";
 import { whiteboardNode } from "../../editor/whiteboard-node";
 import {
   getActiveWhiteboard,
@@ -74,19 +76,22 @@ class WhiteboardNodeView implements NodeView {
     this.dom = document.createElement("div");
     this.dom.className = styles.node;
     this.dom.contentEditable = "false";
-    this.dom.draggable = view.editable;
 
     this.preview = document.createElement("button");
     this.preview.type = "button";
     this.preview.className = styles.preview;
     this.preview.disabled = !view.editable;
-    this.preview.draggable = view.editable;
     this.preview.title = "Doble clic para editar · arrastrar para mover";
     this.preview.setAttribute("aria-label", "Doble clic para editar el dibujo");
     this.preview.addEventListener("dblclick", (event) => {
       event.preventDefault();
       queueMicrotask(() => void this.startEditing());
     });
+    // Un clic no abre la pizarra (eso es doble clic), pero sí tiene que decir
+    // qué dibujo está activo, igual que cualquier otro elemento seleccionable.
+    this.preview.addEventListener("click", () => this.setActive(true));
+    this.preview.addEventListener("focus", () => this.setActive(true));
+    this.preview.addEventListener("blur", () => this.setActive(false));
     this.preview.addEventListener("keydown", (event) => {
       if (event.key !== "Enter" && event.key !== " ") return;
       event.preventDefault();
@@ -103,6 +108,7 @@ class WhiteboardNodeView implements NodeView {
     this.editorHost = document.createElement("div");
     this.editorHost.className = styles.editorHost;
     this.dom.append(this.preview, this.editorHost);
+    this.syncDraggable();
     this.updatePreview();
     if (initialNode.attrs.draft) queueMicrotask(() => void this.startEditing());
   }
@@ -111,19 +117,39 @@ class WhiteboardNodeView implements NodeView {
     if (node.type !== this.currentNode.type) return false;
     this.currentNode = node;
     this.preview.disabled = !this.view.editable;
-    this.dom.draggable = this.view.editable;
-    this.preview.draggable = this.view.editable;
+    this.syncDraggable();
     if (node.attrs.draft && !this.editing && !this.starting) queueMicrotask(() => void this.startEditing());
     if (!this.editing) this.updatePreview();
     return true;
   }
 
+  /**
+   * El nodo solo se arrastra cuando no hay lienzo abierto dentro.
+   *
+   * Con el editor montado dentro de `dom`, un `draggable` en el ancestro
+   * convierte cualquier arrastre que empiece en su interior en un arrastre
+   * nativo del nodo entero. Eso rompía la barra de grosor: al arrastrar el
+   * cursor se movía la pizarra en vez de cambiar el trazo.
+   */
+  private syncDraggable(): void {
+    const draggable = this.view.editable && !this.editing && !this.starting;
+    this.dom.draggable = draggable;
+    this.preview.draggable = draggable;
+  }
+
   selectNode(): void {
     this.dom.classList.add("ProseMirror-selectednode");
+    this.setActive(true);
   }
 
   deselectNode(): void {
     this.dom.classList.remove("ProseMirror-selectednode");
+    this.setActive(false);
+  }
+
+  /** Marca el dibujo como activo para que se vea qué se va a editar. */
+  private setActive(active: boolean): void {
+    this.dom.classList.toggle(styles.active, active);
   }
 
   stopEvent(event: Event): boolean {
@@ -163,31 +189,50 @@ class WhiteboardNodeView implements NodeView {
     const src = typeof this.currentNode.attrs.src === "string" ? this.currentNode.attrs.src : "";
     const svg = src ? drawingFromDataUrl(src) : "";
     const shapes = svg ? parseDrawingSvg(svg) : [];
-    const view = drawingViewBox(shapes);
-    const canRender = shapes.length > 0 || this.currentNode.attrs.draft;
-    if (src && canRender) this.image.src = src;
+    // Si la persona redimensionó el papel, la nota muestra ese papel y no el
+    // recorte ajustado al dibujo.
+    const view = parseDrawingPaper(svg) ?? drawingViewBox(shapes);
+    const hasContent = shapes.length > 0;
+    if (src && hasContent) this.image.src = src;
     else this.image.removeAttribute("src");
-    this.image.style.width = shapes.length ? `${Math.min(1_000, view.width)}px` : "";
-    this.image.style.aspectRatio = shapes.length ? `${view.width} / ${view.height}` : "";
-    // In the note a drawing is content, not a framed canvas. Empty drafts
-    // remain available through the editor, but do not leave a blank board in
-    // the document after closing it.
-    const empty = !src || (!hasDrawingContent(svg) && !this.currentNode.attrs.draft);
-    this.dom.classList.toggle(styles.empty, empty);
-    this.preview.hidden = empty;
+    this.image.style.width = hasContent ? `${Math.min(1_000, view.width)}px` : "";
+    this.image.style.aspectRatio = hasContent ? `${view.width} / ${view.height}` : "";
+    // En la nota un dibujo es contenido, no un lienzo enmarcado. Un borrador
+    // vacío no deja nunca un tablero en blanco: o hay figuras o se edita.
+    this.dom.classList.toggle(styles.empty, !hasContent);
+    this.syncVisibility(hasContent);
+  }
+
+  /**
+   * El editor se incrusta en el MISMO nodo, así que la vista previa tiene que
+   * desaparecer mientras esté abierto: si se queda, el lienzo aparece debajo
+   * del dibujo en lugar de ocupar su lugar.
+   */
+  private syncVisibility(hasContent: boolean): void {
+    this.preview.hidden = !shouldShowDrawingPreview({
+      editing: this.editing,
+      starting: this.starting,
+      hasContent,
+    });
   }
 
   private async startEditing(): Promise<void> {
     const src = typeof this.currentNode.attrs.src === "string" ? this.currentNode.attrs.src : "";
     if (this.editing || this.starting || !src || !this.view.editable || this.view.isDestroyed) return;
     this.starting = true;
+    // Antes de que llegue el lienzo hay que quitar el arrastre: mientras monta,
+    // un gesto rápido sobre la barra de grosor todavía movería el nodo.
+    this.syncDraggable();
+    // `starting` ya cuenta para syncVisibility, pero lo aplicamos ya para que el
+    // lienzo nunca llegue a coexistir un frame con la vista previa del dibujo.
+    this.preview.hidden = true;
+    this.setActive(false);
+    this.dom.classList.remove("ProseMirror-selectednode");
     try {
       const active = getActiveWhiteboard();
       if (active && active.id !== this.sessionId && !(await leaveEditor())) return;
       if (this.view.isDestroyed) return;
       this.editing = true;
-      this.dom.classList.remove("ProseMirror-selectednode");
-      this.preview.hidden = true;
       this.latestSvg = drawingFromDataUrl(src);
       this.unregisterSession = registerWhiteboardSession({
         id: this.sessionId,
@@ -223,10 +268,13 @@ class WhiteboardNodeView implements NodeView {
       this.editorHost.replaceChildren();
       this.unregisterSession?.();
       this.unregisterSession = null;
-      this.preview.hidden = false;
-      this.updatePreview();
     } finally {
       this.starting = false;
+      // `starting` contaba para la visibilidad de la vista previa. Al bajar hay
+      // que volver a decidir, o un fallo al abrir el lienzo dejaría el dibujo
+      // oculto sin nada en su lugar.
+      this.syncDraggable();
+      this.updatePreview();
     }
   }
 
@@ -264,7 +312,10 @@ class WhiteboardNodeView implements NodeView {
     this.editing = false;
     this.unregisterSession?.();
     this.unregisterSession = null;
-    this.preview.hidden = false;
+    // Sin lienzo dentro, el nodo vuelve a poder arrastrarse.
+    this.syncDraggable();
+    // `editing` ya es false, así que updatePreview -> syncVisibility decide si
+    // la vista previa vuelve a ocupar el lugar del lienzo.
     this.updatePreview();
     queueMicrotask(() => {
       if (!this.view.isDestroyed) this.preview.focus({ preventScroll: true });

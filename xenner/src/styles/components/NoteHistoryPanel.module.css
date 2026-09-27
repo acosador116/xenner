@@ -1,0 +1,135 @@
+/* Mismo lenguaje visual que SettingsModal: cabecera de toolbar con eyebrow,
+   filas separadas por una línea y nada de distintivos ni iconos. */
+
+.modal {
+  display: flex;
+  width: min(520px, 94vw);
+  max-height: min(560px, 88vh);
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--skin-note-text);
+  background-color: var(--skin-note-background);
+  border: var(--skin-note-border);
+  border-radius: calc(var(--skin-note-radius) * 1.2);
+  box-shadow: var(--skin-note-shadow);
+  outline: none;
+}
+
+.header {
+  display: flex;
+  min-height: 80px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 22px;
+  background-color: var(--skin-toolbar-background);
+  border-bottom: var(--skin-toolbar-border);
+}
+
+.header p {
+  margin: 0;
+  overflow: hidden;
+  color: var(--skin-toolbar-textDim);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.header h2 {
+  margin: 2px 0 0;
+  color: var(--skin-toolbar-text);
+  font-size: 21px;
+}
+
+.content {
+  min-height: 0;
+  flex: 1;
+  padding: 0 26px 22px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.notice {
+  margin: 26px 0 0;
+  padding: 14px;
+  color: var(--skin-note-text);
+  background-color: var(--skin-note-backgroundHover);
+  border: var(--skin-input-border);
+  border-radius: calc(var(--skin-note-radius) * 0.55);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 14px 0;
+  border-top: var(--skin-input-border);
+}
+
+.row:first-child {
+  border-top: 0;
+}
+
+.rowLabel {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rowLabel strong {
+  color: var(--skin-note-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.rowLabel .current {
+  color: var(--skin-note-accent);
+}
+
+.rowLabel small {
+  overflow: hidden;
+  color: var(--skin-sidebar-textDim);
+  font-family: var(--skin-editor-font, var(--skin-ui-font, inherit));
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowActions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.rowActions output {
+  color: var(--skin-sidebar-textDim);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.hint {
+  margin: 18px 0 0;
+  color: var(--skin-sidebar-textDim);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.hint code {
+  font-size: 11px;
+}

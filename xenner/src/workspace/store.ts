@@ -10,6 +10,7 @@ import type {
 } from "../types/workspace";
 import { getWorkspaceGateway } from "../services/workspace/gateway";
 import { getActiveWhiteboard, leaveEditor } from "../services/editorSession";
+import { forgetNoteHistory, recordNoteVersion, seedNoteHistory } from "../services/noteHistory";
 import { noteTitleFromPath, serializeNoteContent } from "./note";
 import { buildWorkspaceTree, isPathInside } from "./tree";
 
@@ -169,6 +170,9 @@ async function persist(item: PendingSave): Promise<boolean> {
     if (pendingSave?.path === acknowledgement.path) {
       pendingSave = { ...pendingSave, revision: acknowledgement.revision };
     }
+    // Cada guardado confirmado es un punto de retorno de la sesión de "últimos
+    // cambios". Se registra el cuerpo que quedó en disco, no el pendiente.
+    recordNoteVersion(acknowledgement.path, item.body);
     setSaveStatus(pendingSave ? "dirty" : "saved");
     return true;
   } catch (error) {
@@ -294,6 +298,7 @@ export async function selectNote(path: string): Promise<boolean> {
   try {
     const document = await gateway.readNote(path);
     if (request !== selectionRequest) return false;
+    seedNoteHistory(path, document.body, document.updatedAt || Date.now());
     setSelectedPath(path);
     setSelectedDocument(document);
     setSaveStatus("clean");
@@ -337,6 +342,31 @@ export async function updateSelectedTitle(title: string): Promise<boolean> {
 
 export async function retryPendingSave(): Promise<boolean> {
   return runSaveLoop();
+}
+
+/**
+ * Devuelve la nota a un cuerpo anterior del historial.
+ *
+ * Antes de escribir se registra el cuerpo actual como versión, así que
+ * revertir también se puede revertir. El archivo sigue siendo la fuente de
+ * verdad: se escribe con la revisión leída, no a ciegas.
+ */
+export async function restoreNoteBody(path: string, body: string): Promise<boolean> {
+  if (!(await leaveEditor())) return false;
+  if (!(await flushPendingSave())) return false;
+  try {
+    const current = await gateway.readNote(path);
+    if (current.body === body) return true;
+    recordNoteVersion(path, current.body);
+    await gateway.writeNote(path, body, current.revision);
+    await refreshWorkspace();
+    if (selectedPath() === path) await reloadSelectedDocument();
+    setWorkspaceError(null);
+    return true;
+  } catch (error) {
+    setWorkspaceError(errorMessage(error));
+    return false;
+  }
 }
 
 export async function reloadSelectedDocument(): Promise<boolean> {
@@ -554,8 +584,13 @@ export async function deleteEntry(path: string): Promise<boolean> {
   const previousSelection = selectedPath();
   const flatEntries = workspace()?.entries ?? [];
   const index = flatEntries.findIndex((entry) => entry.path === path);
+  const removed = flatEntries
+    .slice(index)
+    .filter((entry) => entry.path === path || entry.path.startsWith(`${path}/`))
+    .map((entry) => entry.path);
   try {
     await gateway.deleteEntry(path);
+    forgetNoteHistory(removed);
     await refreshWorkspace();
     if (previousSelection === path || (previousSelection && isPathInside(previousSelection, path))) {
       const next = [

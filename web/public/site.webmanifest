@@ -1,11 +1,11 @@
 {
   "name": "xenner",
   "short_name": "xenner",
-  "description": "Creador de notas de escritorio con skins editables en TXT.",
+  "description": "Editor de notas desktop con la interfaz en archivos de texto plano. Skins TXT, biblioteca local de Markdown, sin cuentas ni nube.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#111018",
-  "theme_color": "#5932b5",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "icons": [
     {
       "src": "/favicon.svg",

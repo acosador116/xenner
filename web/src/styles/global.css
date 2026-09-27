@@ -1,64 +1,125 @@
+/* ==========================================================================
+   xenner — sistema visual
+
+   Página CLARA y editorial. El producto es un editor de notas: la web debe
+   sentirse como papel, no como un panel de control.
+
+   Contraste verificado con cálculo de luminancia relativa (WCAG 2.2 AA) en las
+   tres superficies (fondo, superficie, hundida):
+     texto  >= 4.5:1 · texto grande y UI >= 3:1
+   El azul de marca (#2383e2) viene de la skin base clara de la app y se usa
+   solo para texto grande y UI; para texto pequeño va --accent-ink.
+   ========================================================================== */
+
 :root {
-  --ink: #111018;
-  --ink-soft: #24202f;
-  --paper: #e8e1cb;
-  --paper-bright: #fff8dc;
-  --paper-shadow: #bdb49d;
-  --hot: #ff2a8f;
-  --hot-dark: #b70c5c;
-  --cyan: #18e6e6;
-  --violet: #5932b5;
-  --acid: #d9ff39;
-  --orange: #ff7433;
-  --line: #111018;
-  --muted: #615c61;
-  --font-display: Impact, Haettenschweiler, 'Arial Narrow Bold', 'Arial Black', sans-serif;
-  --font-ui: 'MS Gothic', 'Osaka-Mono', 'Noto Sans Mono', 'Courier New', monospace;
-  --font-body: Verdana, 'MS Gothic', Geneva, sans-serif;
-  --font-serif: 'Times New Roman', 'Noto Serif', serif;
-  --container: 92rem;
-  --gutter: clamp(1rem, 4vw, 6rem);
   color-scheme: light;
-  font-family: var(--font-body);
+
+  /* --- superficies: papel cálido --- */
+  --bg: #fbfaf8;
+  --surface: #ffffff;
+  --sunken: #f4f2ee;
+
+  /* --- trazos --- */
+  --line: #e7e4de;
+  --line-soft: #efede8;
+  --line-ui: #8c8880;
+  --line-strong: #d5d1c9;
+
+  /* --- tinta --- */
+  --ink: #191917;
+  --ink-2: #55524c;
+  --ink-3: #6d6961;
+
+  /* --- acento --- */
+  --accent: #2383e2;
+  --accent-ink: #1a5fc4;
+  --accent-sub: #eaf2fd;
+  --on-accent: #ffffff;
+
+  /* --- tipografía --- */
+  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+  --serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia,
+    'Noto Serif', 'Times New Roman', serif;
+  --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* Escala 1.25 (major third) sobre 17px, redondeada a la retícula de 4px. */
+  --t-xs: 0.8125rem;
+  --t-sm: 0.9375rem;
+  --t-base: 1.0625rem;
+  --t-md: 1.1875rem;
+  --t-lg: 1.5rem;
+  --t-xl: 1.875rem;
+  --t-2xl: 2.5rem;
+  --t-3xl: 3.25rem;
+  --t-display: clamp(2.5rem, 5.2vw, 4.25rem);
+
+  /* --- ritmo --- */
+  --wide: 74rem;
+  --measure: 32rem;
+  --shell: min(100% - 2.5rem, var(--wide));
+  --gutter: 1.5rem;
+  --air: clamp(4.5rem, 10vw, 8rem);
+
+  /* --- profundidad: papel, no cristal --- */
+  --lift-1: 0 1px 2px rgba(25, 25, 23, 0.04);
+  --lift-2: 0 2px 4px rgba(25, 25, 23, 0.04), 0 8px 20px -6px rgba(25, 25, 23, 0.07);
+  --lift-3: 0 4px 8px rgba(25, 25, 23, 0.04), 0 18px 44px -12px rgba(25, 25, 23, 0.12);
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --t-fast: 170ms;
+  --t-mid: 340ms;
+  --t-slow: 700ms;
+
+  font-family: var(--sans);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
 
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
 html {
   min-width: 0;
   scroll-behavior: smooth;
-  scroll-padding-top: 5.5rem;
-  background: var(--ink);
+  scroll-padding-top: 5rem;
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   min-width: 0;
-  min-height: 100vh;
   margin: 0;
   color: var(--ink);
-  background-color: var(--paper);
-  background-image:
-    linear-gradient(rgba(17, 16, 24, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(17, 16, 24, 0.035) 1px, transparent 1px);
-  background-size: 18px 18px;
+  background: var(--bg);
+  font-size: var(--t-base);
+  line-height: 1.65;
+  overflow-x: hidden;
 }
 
-body,
-button,
-input,
-textarea,
-select {
-  font: inherit;
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+  text-wrap: balance;
 }
 
-button,
+p {
+  margin: 0;
+  text-wrap: pretty;
+}
+
 a {
-  -webkit-tap-highlight-color: transparent;
+  color: inherit;
+  text-decoration: none;
 }
 
 img,
@@ -67,14 +128,31 @@ svg {
   max-width: 100%;
 }
 
+button {
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
 ::selection {
-  color: var(--paper-bright);
-  background: var(--hot);
+  color: var(--on-accent);
+  background: var(--accent-ink);
 }
 
 :focus-visible {
-  outline: 3px dotted var(--hot);
-  outline-offset: 5px;
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 3px;
+  border-radius: 5px;
 }
 
 .visually-hidden {
@@ -89,145 +167,139 @@ svg {
   border: 0 !important;
 }
 
+.shell {
+  width: var(--shell);
+  margin-inline: auto;
+}
+
 .skip-link {
   position: fixed;
-  z-index: 100;
-  top: 0.75rem;
-  left: 0.75rem;
-  padding: 0.7rem 1rem;
-  color: var(--ink);
-  border: 2px solid var(--ink);
-  background: var(--acid);
-  box-shadow: 4px 4px 0 var(--ink);
-  font-family: var(--font-ui);
-  font-size: 0.75rem;
-  font-weight: 800;
-  text-decoration: none;
-  transform: translateY(-160%);
+  z-index: 200;
+  top: 1rem;
+  left: 1rem;
+  min-height: 1.5rem;
+  padding: 0.7rem 1.1rem;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  color: var(--on-accent);
+  background: var(--accent-ink);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  transform: translateY(calc(-100% - 1.5rem));
+  transition: transform var(--t-fast) var(--ease);
 }
 
 .skip-link:focus {
   transform: translateY(0);
 }
 
-.container {
-  width: min(calc(100% - var(--gutter) - var(--gutter)), var(--container));
-  margin-inline: auto;
-}
+/* ---------- rótulo ---------- */
 
-.eyebrow {
-  width: fit-content;
+.label {
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
-  color: inherit;
-  font-family: var(--font-ui);
-  font-size: 0.62rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  line-height: 1.2;
+  color: var(--ink-3);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: 0.13em;
   text-transform: uppercase;
 }
 
-.eyebrow::before {
-  width: 1.8rem;
-  height: 0.28rem;
+.label::before {
+  width: 1.5rem;
+  height: 1px;
+  flex: none;
   content: '';
   background: currentColor;
 }
 
-.button-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
+/* ---------- botones ---------- */
 
-.button {
-  min-height: 3.2rem;
-  padding: 0 1.15rem;
+.cta {
+  min-height: 2.9rem;
+  padding: 0 1.5rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.65rem;
+  gap: 0.5rem;
+  border-radius: 999px;
+  font-size: var(--t-sm);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  transition: transform var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease),
+    box-shadow var(--t-fast) var(--ease);
+}
+
+.cta--fill {
+  color: var(--on-accent);
+  background: var(--accent-ink);
+  box-shadow: var(--lift-1);
+}
+
+.cta--fill:hover {
+  background: #154f9f;
+  transform: translateY(-1px);
+  box-shadow: var(--lift-2);
+}
+
+.cta--line {
   color: var(--ink);
-  border: 3px solid var(--ink);
-  border-radius: 0;
-  background: var(--paper-bright);
-  box-shadow: 5px 5px 0 var(--ink);
-  font-family: var(--font-ui);
-  font-size: 0.72rem;
-  font-weight: 900;
-  letter-spacing: 0.03em;
-  text-decoration: none;
-  text-transform: uppercase;
-  transition: transform 100ms ease, box-shadow 100ms ease, background-color 100ms ease;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
 }
 
-.button:hover {
-  transform: translate(2px, 2px);
-  box-shadow: 3px 3px 0 var(--ink);
+.cta--line:hover {
+  border-color: var(--ink-3);
+  background: var(--sunken);
 }
 
-.button:active {
-  transform: translate(5px, 5px);
-  box-shadow: 0 0 0 var(--ink);
-}
-
-.button--primary {
-  background: var(--acid);
-}
-
-.button--primary:hover {
-  background: var(--hot);
-  color: var(--paper-bright);
-}
-
-.button--secondary {
-  color: var(--paper-bright);
-  background: var(--violet);
-}
-
-.button--secondary:hover {
-  color: var(--ink);
-  background: var(--cyan);
-}
-
-.button svg {
+.cta svg {
   width: 1rem;
   height: 1rem;
+  flex: none;
 }
 
-@media (min-width: 1800px) {
-  :root {
-    --container: min(120rem, 94vw);
-    font-size: 18px;
-  }
+/* ---------- enlace con flecha ---------- */
+
+.arrow {
+  min-height: 1.5rem;
+  padding: 0.15rem 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--accent-ink);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  transition: gap var(--t-fast) var(--ease);
 }
 
-@media (min-width: 2400px) {
-  :root {
-    --container: min(136rem, 90vw);
-    font-size: 22px;
-  }
+.arrow:hover {
+  gap: 0.7rem;
 }
 
-@media (min-width: 3200px) {
-  :root {
-    font-size: 24px;
-  }
+.arrow svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex: none;
 }
 
-@media (max-width: 760px) {
-  :root {
-    --gutter: 1rem;
-  }
+/* ---------- aparición al hacer scroll ----------
+   Solo se oculta si hay JS que la revierta: si el script falla, el
+   contenido sigue visible. */
+
+.js .reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity var(--t-slow) var(--ease), transform var(--t-slow) var(--ease);
 }
 
-@media (max-width: 420px) {
-  .button {
-    width: 100%;
-  }
+.js .reveal.is-in {
+  opacity: 1;
+  transform: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -238,9 +310,19 @@ svg {
   *,
   *::before,
   *::after {
-    scroll-behavior: auto !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .js .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 760px) {
+  :root {
+    --gutter: 1.15rem;
   }
 }

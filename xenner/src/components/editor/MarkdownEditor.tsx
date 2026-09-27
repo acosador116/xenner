@@ -9,8 +9,9 @@ import {
   wrapInOrderedListCommand,
 } from "@milkdown/kit/preset/commonmark";
 import { createParagraphNear } from "@milkdown/kit/prose/commands";
-import { TextSelection } from "@milkdown/kit/prose/state";
-import { replaceAll } from "@milkdown/kit/utils";
+import { Plugin, PluginKey, TextSelection } from "@milkdown/kit/prose/state";
+import type { EditorView } from "@milkdown/kit/prose/view";
+import { $prose, replaceAll } from "@milkdown/kit/utils";
 import { imageBlockSchema } from "@milkdown/kit/component/image-block";
 import { createEffect, createSignal, onCleanup, onMount, Show } from "solid-js";
 
@@ -74,8 +75,10 @@ interface MarkdownEditorProps {
 export function MarkdownEditor(props: MarkdownEditorProps) {
   const [ready, setReady] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
+  const [toolbarHover, setToolbarHover] = createSignal(false);
   let root: HTMLDivElement | undefined;
   let crepe: CrepeInstance | null = null;
+  let toolbarHideTimer: ReturnType<typeof setTimeout> | null = null;
   let textColorInput: HTMLInputElement | undefined;
   let textBackgroundInput: HTMLInputElement | undefined;
   let pendingTextSelection: { from: number; to: number } | null = null;
@@ -88,6 +91,134 @@ export function MarkdownEditor(props: MarkdownEditorProps) {
   };
   let insertWhiteboardCommand: ((tool: DrawingTool) => Promise<void>) | null = null;
   let insertingWhiteboard = false;
+  // Última posición del cursor de TEXTO conocida. Sin ella, insertar un bloque
+  // (pizarra o imagen) desde el dock caía al final de la nota cuando la
+  // selección era un NodeSelection o el editor aún no había recuperado el foco
+  // tras el clic en la barra.
+  let textCursorPos: number | null = null;
+
+  function rememberTextCursor(view: EditorView): void {
+    const { selection } = view.state;
+    if (!(selection instanceof TextSelection)) return;
+    if (!selection.$from.parent.isTextblock) return;
+    textCursorPos = selection.from;
+  }
+
+  // Recoloca la selección en el cursor de texto conocido. Es idempotente: si
+  // ya hay una selección de texto válida, no toca nada.
+  function restoreTextCursor(view: EditorView): void {
+    const { selection } = view.state;
+    if (selection instanceof TextSelection && selection.$from.parent.isTextblock) return;
+    if (textCursorPos === null) return;
+    const pos = Math.min(Math.max(textCursorPos, 0), view.state.doc.content.size);
+    try {
+      view.dispatch(view.state.tr.setSelection(TextSelection.near(view.state.doc.resolve(pos), 1)));
+    } catch {
+      // Una selección que ya no se puede reconstruir deja intacta la actual.
+    }
+  }
+
+  /**
+   * Deja el cursor en el párrafo que se acaba de crear tras el bloque, para
+   * poder seguir escribiendo sin tabular. SIN `scrollIntoView()` a propósito:
+   * el bloque recién insertado es alto y un scroll mínimo desplaza la vista
+   * justo cuando la persona está mirando la línea desde la que insertó.
+   */
+  function settleAfterInsertion(view: EditorView): void {
+    try {
+      const near = TextSelection.near(view.state.selection.$to, 1);
+      view.dispatch(view.state.tr.setSelection(near));
+    } catch {
+      // El bloque ya está insertado; no vale la pena fallar por el cursor.
+    }
+    view.focus();
+  }
+
+  const textCursorTracker = $prose(
+    () =>
+      new Plugin({
+        key: new PluginKey("xennerTextCursor"),
+        view: () => ({
+          update: (view) => {
+            if (disposed) return;
+            rememberTextCursor(view);
+            // Sin selección no hay barra que revelar: se suba de golpe en vez de
+            // esperar al temporizador, o aparecería sola al volver a seleccionar.
+            if (view.state.selection.empty && toolbarHover()) {
+              if (toolbarHideTimer) clearTimeout(toolbarHideTimer);
+              toolbarHideTimer = null;
+              setToolbarHover(false);
+            }
+          },
+        }),
+      }),
+  );
+
+  // --- Barra flotante de formato -------------------------------------------
+  // Crepe la monta a 20 ms de seleccionar y la deja fija. Se oculta hasta que
+  // el puntero pasa por encima del TEXTO SELECCIONADO, que es donde la gente
+  // mira al terminar de seleccionar, y no sobre la propia barra, que es
+  // invisible y nadie sabe que hay ahí.
+  const TOOLBAR_LINGER_MS = 700;
+
+  function selectionRect(): DOMRect | null {
+    if (!crepe) return null;
+    const view = crepe.editor.ctx.get(editorViewCtx);
+    const { from, to } = view.state.selection;
+    if (from === to) return null;
+    try {
+      // Caja envolvente de los dos extremos: una selección de varias líneas no
+      // cabe en un solo rectángulo, pero su bounding box sí.
+      const start = view.coordsAtPos(from);
+      const end = view.coordsAtPos(to);
+      const left = Math.min(start.left, end.left);
+      const right = Math.max(start.right, end.right);
+      const top = Math.min(start.top, end.top);
+      const bottom = Math.max(start.bottom, end.bottom);
+      return new DOMRect(left, top - 6, Math.max(right - left, 8), bottom - top + 12);
+    } catch {
+      return null;
+    }
+  }
+
+  function isPointerOverToolbar(target: EventTarget | null): boolean {
+    return target instanceof Element && Boolean(target.closest(".milkdown-toolbar"));
+  }
+
+  function hideToolbarSoon(): void {
+    if (toolbarHideTimer) clearTimeout(toolbarHideTimer);
+    // Al salir hay un hueco entre el texto y la barra; sin este margen la barra
+    // desaparecería justo en mitad del trayecto y no secould clicar en ella.
+    toolbarHideTimer = setTimeout(() => {
+      toolbarHideTimer = null;
+      setToolbarHover(false);
+    }, TOOLBAR_LINGER_MS);
+  }
+
+  function onEditorPointerMove(event: PointerEvent): void {
+    if (isPointerOverToolbar(event.target)) {
+      if (toolbarHideTimer) clearTimeout(toolbarHideTimer);
+      setToolbarHover(true);
+      return;
+    }
+    const rect = selectionRect();
+    const inside =
+      rect !== null &&
+      event.clientX >= rect.left &&
+      event.clientX <= rect.right &&
+      event.clientY >= rect.top &&
+      event.clientY <= rect.bottom;
+    if (inside) {
+      if (toolbarHideTimer) clearTimeout(toolbarHideTimer);
+      setToolbarHover(true);
+      return;
+    }
+    hideToolbarSoon();
+  }
+
+  function onEditorPointerLeave(): void {
+    hideToolbarSoon();
+  }
 
   function captureTextSelection(): void {
     if (!crepe) return;
@@ -164,12 +295,16 @@ export function MarkdownEditor(props: MarkdownEditorProps) {
             draft: true,
             drawingId,
           });
+          const view = instance.editor.ctx.get(editorViewCtx);
+          // El dock no roba el foco, pero la importación del asset es async:
+          // recolocamos la selección justo antes de insertar para que la
+          // pizarra caiga donde estaba el cursor de texto.
+          restoreTextCursor(view);
           const commands = instance.editor.ctx.get(commandsCtx);
           const inserted = commands.call(addBlockTypeCommand.key, { nodeType: node });
           if (!inserted) throw new Error("No se pudo insertar el bloque de pizarra");
-          const view = instance.editor.ctx.get(editorViewCtx);
           createParagraphNear(view.state, view.dispatch);
-          view.focus();
+          settleAfterInsertion(view);
         } catch (error) {
           if (imported) {
             await deleteAssetForEditor(props.notePath, imported.relativePath).catch(() => undefined);
@@ -284,6 +419,7 @@ export function MarkdownEditor(props: MarkdownEditorProps) {
         .use(textColorMark)
         .use(whiteboardNode)
         .use(whiteboardRemark)
+        .use(textCursorTracker)
         .use(createWhiteboardView({
           onSave: async (svg, currentSrc, saveOptions) => {
             try {
@@ -339,6 +475,8 @@ export function MarkdownEditor(props: MarkdownEditorProps) {
           instance.editor.ctx.get(editorViewCtx).focus();
         },
         setBlockType(type) {
+          const view = instance.editor.ctx.get(editorViewCtx);
+          restoreTextCursor(view);
           const commands = instance.editor.ctx.get(commandsCtx);
           if (type === "paragraph") commands.call(turnIntoTextCommand.key);
           else if (type === "heading1") commands.call(wrapInHeadingCommand.key, 1);
@@ -347,7 +485,7 @@ export function MarkdownEditor(props: MarkdownEditorProps) {
           else if (type === "bullet") commands.call(wrapInBulletListCommand.key);
           else if (type === "ordered") commands.call(wrapInOrderedListCommand.key);
           else commands.call(wrapInBlockquoteCommand.key);
-          instance.editor.ctx.get(editorViewCtx).focus();
+          view.focus();
         },
         async insertWhiteboard(tool: DrawingTool) {
           await insertWhiteboard(tool);
@@ -355,6 +493,8 @@ export function MarkdownEditor(props: MarkdownEditorProps) {
         async insertAsset(dataUrl, relativePath, alt = "Imagen", revision) {
           prepared.replacements.set(dataUrl, relativePath);
           if (revision) prepared.revisions.set(dataUrl, revision);
+          const view = instance.editor.ctx.get(editorViewCtx);
+          restoreTextCursor(view);
           const commands = instance.editor.ctx.get(commandsCtx);
           const node = imageBlockSchema.type(instance.editor.ctx).create({
             src: dataUrl,
@@ -368,9 +508,8 @@ export function MarkdownEditor(props: MarkdownEditorProps) {
             prepared.revisions.delete(dataUrl);
             throw new Error("No se pudo insertar el bloque de imagen");
           }
-          const view = instance.editor.ctx.get(editorViewCtx);
           createParagraphNear(view.state, view.dispatch);
-          view.focus();
+          settleAfterInsertion(view);
         },
       });
       setReady(true);
@@ -402,13 +541,20 @@ export function MarkdownEditor(props: MarkdownEditorProps) {
 
   onCleanup(() => {
     disposed = true;
+    if (toolbarHideTimer) clearTimeout(toolbarHideTimer);
     props.onDispose?.();
     if (crepe) void crepe.destroy();
   });
 
   return (
     <div class={styles.shell}>
-      <div ref={(element) => (root = element)} class={styles.editor} />
+      <div
+        ref={(element) => (root = element)}
+        class={styles.editor}
+        data-toolbar={toolbarHover() ? "on" : "off"}
+        onPointerMove={onEditorPointerMove}
+        onPointerLeave={onEditorPointerLeave}
+      />
       <input
         ref={(element) => (textColorInput = element)}
         class="sr-only"

@@ -1,161 +1,103 @@
 ---
 import Brand from './Brand.astro';
 
-const sourceUrl = 'https://github.com/acosador116/xenner';
-const specUrl = `${sourceUrl}/blob/main/xenner/docs/SKIN_SPEC.md`;
+const repo = 'https://github.com/acosador116/xenner';
 const year = new Date().getFullYear();
 ---
 
-<footer class="site-footer">
-  <div class="site-footer__inner">
-    <div class="site-footer__brand">
-      <Brand />
-      <p>Una ventana pequeña para ideas. Un archivo de texto para cambiar su mundo.</p>
+<footer class="foot">
+  <div class="shell">
+    <div class="foot__top">
+      <div class="foot__brand">
+        <Brand />
+        <p>Un editor de notas que trabaja sobre una carpeta de Markdown en tu ordenador.</p>
+      </div>
+
+      <nav class="foot__col" aria-label="Producto">
+        <h2>Producto</h2>
+        <a href="#editor">El editor</a>
+        <a href="#organize">Carpetas</a>
+        <a href="#look">Apariencia</a>
+      </nav>
+
+      <nav class="foot__col" aria-label="Proyecto">
+        <h2>Proyecto</h2>
+        <a href={repo} target="_blank" rel="noreferrer">GitHub ↗</a>
+        <a href={`${repo}#readme`} target="_blank" rel="noreferrer">Cómo se ejecuta ↗</a>
+      </nav>
     </div>
 
-    <nav aria-label="Enlaces del pie">
-      <span class="site-footer__label">directorios</span>
-      <a href="#filosofia"><b>01</b> La idea</a>
-      <a href="#skins"><b>02</b> Sistema de skins</a>
-      <a href={specUrl} target="_blank" rel="noreferrer"><b>03</b> Especificación ↗</a>
-      <a href={sourceUrl} target="_blank" rel="noreferrer"><b>04</b> Código fuente ↗</a>
-    </nav>
-
-    <div class="site-footer__drive" aria-label="Información del proyecto">
-      <span class="site-footer__label">disk status</span>
-      <div class="site-footer__meter" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
-      <p>0.1 · MIT<br />{year} / LOCAL</p>
-      <a href="#inicio">↑ volver arriba</a>
+    <div class="foot__base">
+      <p>MIT · {year}</p>
+      <p>Tauri · SolidJS · Rust</p>
     </div>
   </div>
 </footer>
 
 <style>
-  .site-footer {
-    color: var(--paper-bright);
-    background: var(--ink);
-    border-top: 5px solid var(--hot);
+  .foot {
+    padding: clamp(3rem, 6vw, 4.5rem) 0 2.25rem;
+    border-top: 1px solid var(--line);
+    background: var(--surface);
   }
 
-  .site-footer__inner {
-    width: min(calc(100% - var(--gutter) - var(--gutter)), var(--container));
-    margin: 0 auto;
-    padding: 4.5rem 0 2.5rem;
+  .foot__top {
     display: grid;
-    grid-template-columns: 1.25fr 0.9fr 0.55fr;
-    align-items: start;
-    gap: 4rem;
+    grid-template-columns: 1.8fr 1fr 1fr;
+    gap: clamp(1.75rem, 5vw, 3.5rem);
   }
 
-  .site-footer__brand p {
-    max-width: 25rem;
-    margin: 1.35rem 0 0;
-    color: rgba(255, 248, 220, 0.65);
-    font-family: var(--font-ui);
-    font-size: 0.72rem;
-    line-height: 1.8;
+  .foot__brand p {
+    margin-top: 0.85rem;
+    max-width: 19rem;
+    color: var(--ink-2);
+    font-size: var(--t-sm);
+    line-height: 1.65;
   }
 
-  nav {
+  .foot__col {
     display: grid;
+    align-content: start;
+    gap: 0.1rem;
   }
 
-  .site-footer__label {
-    margin-bottom: 1rem;
-    color: var(--hot);
-    font-family: var(--font-ui);
-    font-size: 0.57rem;
-    font-weight: 900;
-    letter-spacing: 0.1em;
+  .foot__col h2 {
+    margin-bottom: 0.6rem;
+    color: var(--ink-3);
+    font-size: var(--t-xs);
+    font-weight: 600;
+    letter-spacing: 0.11em;
     text-transform: uppercase;
   }
 
-  nav a {
-    min-height: 2.25rem;
+  .foot__col a {
+    padding: 0.32rem 0;
+    color: var(--ink-2);
+    font-size: var(--t-sm);
+    transition: color var(--t-fast) var(--ease);
+  }
+
+  .foot__col a:hover {
+    color: var(--accent-ink);
+  }
+
+  .foot__base {
+    margin-top: clamp(2.25rem, 5vw, 3rem);
+    padding-top: 1.35rem;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 0.7rem;
-    color: var(--paper-bright);
-    border-bottom: 1px dashed #63586e;
-    font-family: var(--font-ui);
-    font-size: 0.65rem;
-    text-decoration: none;
+    justify-content: space-between;
+    gap: 0.6rem;
+    border-top: 1px solid var(--line);
+    color: var(--ink-3);
+    font-size: var(--t-xs);
   }
 
-  nav a b {
-    color: var(--cyan);
-    font-size: 0.52rem;
-  }
-
-  nav a:hover {
-    padding-left: 0.35rem;
-    color: var(--ink);
-    background: var(--cyan);
-  }
-
-  nav a:hover b {
-    color: var(--hot-dark);
-  }
-
-  .site-footer__drive {
-    padding: 1.1rem;
-    color: var(--ink);
-    border: 3px solid var(--paper-bright);
-    background: var(--paper);
-    box-shadow: 6px 6px 0 var(--violet);
-  }
-
-  .site-footer__drive .site-footer__label {
-    color: var(--hot-dark);
-  }
-
-  .site-footer__meter {
-    height: 1.1rem;
-    padding: 0.2rem;
-    display: flex;
-    gap: 0.18rem;
-    border: 2px solid var(--ink);
-    background: #fff;
-  }
-
-  .site-footer__meter i {
-    flex: 1;
-    background: var(--violet);
-  }
-
-  .site-footer__meter i:last-child {
-    background: #bdb49d;
-  }
-
-  .site-footer__drive p {
-    margin: 1rem 0 0;
-    font-family: var(--font-ui);
-    font-size: 0.58rem;
-    font-weight: 800;
-    line-height: 1.7;
-  }
-
-  .site-footer__drive a {
-    margin-top: 1.3rem;
-    color: var(--ink);
-    font-family: var(--font-ui);
-    font-size: 0.56rem;
-    font-weight: 900;
-    text-decoration: none;
-  }
-
-  .site-footer__drive a:hover {
-    color: var(--hot-dark);
-  }
-
-  @media (max-width: 760px) {
-    .site-footer__inner {
+  @media (max-width: 720px) {
+    .foot__top {
       grid-template-columns: 1fr;
-      gap: 3rem;
-    }
-
-    .site-footer__drive {
-      max-width: 18rem;
+      gap: 1.75rem;
     }
   }
 </style>
