@@ -1,5 +1,5 @@
 ---
-import GuideLayout from '../layouts/GuideLayout.astro';
+import DocsLayout from '../layouts/DocsLayout.astro';
 import {
   ASSET_EXTENSIONS,
   HOOKS,
@@ -17,20 +17,6 @@ const fontExts = ASSET_EXTENSIONS['Tipografías'].join(' ');
  * buscando «cómo pongo una imagen» no va a leer cinco mil palabras para
  * encontrarla. Los `id` tienen que coincidir con los `<h2>` de abajo.
  */
-const contents = [
-  { id: 'que-es', label: 'Qué es una skin' },
-  { id: 'cinco-minutos', label: 'La primera, en cinco minutos' },
-  { id: 'archivos', label: 'De qué archivos está hecha' },
-  { id: 'formato', label: 'El formato, que son tres reglas' },
-  { id: 'colores', label: 'Los colores' },
-  { id: 'claves', label: 'Todas las claves' },
-  { id: 'imagenes', label: 'Imágenes, iconos y tipografías' },
-  { id: 'css', label: 'Cambiarlo todo con CSS' },
-  { id: 'ejemplo', label: 'Una skin desde cero' },
-  { id: 'problemas', label: 'Si no funciona' },
-  { id: 'limites', label: 'Lo que no se puede' },
-];
-
 /** Escapa lo que venga de los datos antes de ponerlo en la página. */
 const esc = (value: string): string =>
   value
@@ -75,7 +61,8 @@ function sampleFile(doc: SkinComponentDoc): string {
 
 function section(doc: SkinComponentDoc): string {
   return [
-    '<h3><code>' + esc(doc.file) + '</code> &mdash; ' + esc(doc.name) + '</h3>',
+    '<h3 id="componente-' + doc.file.replace('.txt', '') + '">' +
+      '<code>' + esc(doc.file) + '</code> &mdash; ' + esc(doc.name) + '</h3>',
     '<p>' + esc(doc.sees) + '</p>',
     '<p>Además de las ocho de arriba, en este archivo valen:</p>',
     doc.keys.map(card).join(''),
@@ -92,14 +79,12 @@ const hookRows = HOOKS.map(
 ).join('\n');
 ---
 
-<GuideLayout
+<DocsLayout
   path="/doc/"
   title="Documentación de Xenner: cómo hacer tu propia skin"
   heading="Haz que Xenner se vea como quieras"
   lead="Una skin es una carpeta con unos archivos tuyos dentro: colores, imágenes, iconos, tipografías y un archivo de CSS. No hay que compilar nada, no hay que instalar nada y no hace falta saber programar. Cambias un color, guardas, y la ventana cambia mientras la estás mirando. Esto es todo, de principio a fin."
   description="Documentación completa de Xenner: cómo crear una skin, el formato de los archivos de texto, todas las claves con ejemplos, imágenes, iconos SVG, tipografías y custom.css."
-  eyebrow="Documentación"
-  contents={contents}
 >
   <p>
     Si has llegado aquí es que quieres que Xenner no se parezca a Xenner. Se
@@ -132,7 +117,7 @@ const hookRows = HOOKS.map(
 
   <ol class="steps">
     <li>
-      <h3>Abre la carpeta de skins</h3>
+      <h3 id="abre-la-carpeta-de-skins">Abre la carpeta de skins</h3>
       <p>
         Dentro de la carpeta de Xenner está <code>skins/</code>. Ahí hay cuatro
         carpetas de ejemplo: <code>glass-default/</code>, <code>webcore/</code>,
@@ -140,7 +125,7 @@ const hookRows = HOOKS.map(
       </p>
     </li>
     <li>
-      <h3>Duplica una</h3>
+      <h3 id="duplica-una">Duplica una</h3>
       <p>
         Copia una de las cuatro y renómbrala. El nombre de la carpeta es el
         identificador de la skin, así que solo puede llevar letras, números,
@@ -149,7 +134,7 @@ const hookRows = HOOKS.map(
       </p>
     </li>
     <li>
-      <h3>Cambia un color</h3>
+      <h3 id="cambia-un-color">Cambia un color</h3>
       <p>
         Abre <code>note.txt</code> con cualquier editor de texto, busca la línea
         que empieza por <code>text=</code> y cambia lo que hay entre las
@@ -157,7 +142,7 @@ const hookRows = HOOKS.map(
       </p>
     </li>
     <li>
-      <h3>Elígela</h3>
+      <h3 id="eligela">Elígela</h3>
       <p>
         Abre <em>Ajustes → Apariencia</em> y búscala en la lista. O, si prefieres
         no tocar la aplicación, abre <code>skins/config.txt</code> y pon el
@@ -284,7 +269,7 @@ accent="#5b9bd5"</code></pre>
     el resto dependen del trozo de pantalla que estés cambiando.
   </p>
 
-  <h3>Cómo se escribe</h3>
+  <h3 id="como-se-escribe">Cómo se escribe</h3>
 
   <p>
     Las comillas son opcionales en casi todos los casos. Se ponen cuando el
@@ -333,7 +318,7 @@ accent="#5b9bd5"</code></pre>
     </tbody>
   </table>
 
-  <h3>Las ocho que valen en todas partes</h3>
+  <h3 id="las-ocho-que-valen-en-todas-partes">Las ocho que valen en todas partes</h3>
 
   <p>
     Sirven en <code>background.txt</code>, <code>sidebar.txt</code>,
@@ -357,11 +342,11 @@ accent="#5b9bd5"</code></pre>
     </p>
   </div>
 
-  <h3>Las claves de cada archivo</h3>
+  <h3 id="las-claves-de-cada-archivo">Las claves de cada archivo</h3>
 
   <div set:html={componentSections} />
 
-  <h3>El manifiesto</h3>
+  <h3 id="el-manifiesto">El manifiesto</h3>
 
   <p>
     <code>skin.txt</code> es el único archivo obligatorio. Lo que Xenner lee de
@@ -426,7 +411,7 @@ author="tu nombre"</code></pre>
     sobra para el fondo.
   </p>
 
-  <h3>Nombrar un archivo</h3>
+  <h3 id="nombrar-un-archivo">Nombrar un archivo</h3>
 
   <p>
     Se nombra con su ruta dentro de <code>url()</code>. Sin barras delante, sin
@@ -454,7 +439,7 @@ url(https://.../foto.jpg)       <span>no: una skin no habla con internet</span><
     </p>
   </div>
 
-  <h3>Un fondo de foto</h3>
+  <h3 id="un-fondo-de-foto">Un fondo de foto</h3>
 
   <p>Lo más directo, en <code>background.txt</code>:</p>
 
@@ -485,7 +470,7 @@ url(https://.../foto.jpg)       <span>no: una skin no habla con internet</span><
     <code>background-image</code> y se le dice <code>background-size</code>.
   </p>
 
-  <h3>Iconos propios, y por qué un SVG solo</h3>
+  <h3 id="iconos-propios-y-por-que-un-svg-solo">Iconos propios, y por qué un SVG solo</h3>
 
   <p>
     Un SVG es un dibujo hecho de vectores: se describe con líneas y curvas, no con
@@ -518,7 +503,7 @@ url(https://.../foto.jpg)       <span>no: una skin no habla con internet</span><
     <code>skins/pixel/assets/nota.svg</code> con el archivo entero.
   </p>
 
-  <h3>Un marco alrededor de las notas</h3>
+  <h3 id="un-marco-alrededor-de-las-notas">Un marco alrededor de las notas</h3>
 
   <p>
     La razón de ser de <code>border-image</code>. Cortas una imagen en nueve
@@ -539,7 +524,7 @@ url(https://.../foto.jpg)       <span>no: una skin no habla con internet</span><
     ventana no mida lo que el dibujo.
   </p>
 
-  <h3>Tipografías</h3>
+  <h3 id="tipografias">Tipografías</h3>
 
   <p>Se puede llevar una letra dentro de la skin:</p>
 
@@ -591,7 +576,7 @@ url(https://.../foto.jpg)       <span>no: una skin no habla con internet</span><
     </p>
   </div>
 
-  <h3>Empezar</h3>
+  <h3 id="empezar">Empezar</h3>
 
   <p>
     Crea <code>custom.css</code> en la carpeta de tu skin. La primera línea útil
@@ -606,7 +591,7 @@ url(https://.../foto.jpg)       <span>no: una skin no habla con internet</span><
 
   <p>Guárdalo. La ventana cambia a los dos o tres segundos, sin reiniciar.</p>
 
-  <h3>A qué se puede agarrar: <code>data-x</code></h3>
+  <h3 id="a-que-se-puede-agarrar-data-x">A qué se puede agarrar: <code>data-x</code></h3>
 
   <p>
     Xenner está hecho con módulos de CSS, así que los nombres de clase cambian
@@ -642,7 +627,7 @@ url(https://.../foto.jpg)       <span>no: una skin no habla con internet</span><
 <span>/* solo el botón grande de "Nueva nota" */</span>
 [data-x="button"][data-x-role="primary"] { ... }</code></pre>
 
-  <h3>Y dentro del texto de la nota</h3>
+  <h3 id="y-dentro-del-texto-de-la-nota">Y dentro del texto de la nota</h3>
 
   <p>
     <code>[data-x="editor"]</code> es el editor, y dentro hay HTML normal, así
@@ -667,7 +652,7 @@ url(https://.../foto.jpg)       <span>no: una skin no habla con internet</span><
     querías.
   </p>
 
-  <h3>Un color para de día y otro para de noche</h3>
+  <h3 id="un-color-para-de-dia-y-otro-para-de-noche">Un color para de día y otro para de noche</h3>
 
   <p>
     Es la razón principal por la que existe este archivo. Con los
@@ -724,7 +709,7 @@ url(https://.../foto.jpg)       <span>no: una skin no habla con internet</span><
     </p>
   </div>
 
-  <h3>Añadir cosas que no estaban</h3>
+  <h3 id="anadir-cosas-que-no-estaban">Añadir cosas que no estaban</h3>
 
   <p>
     <code>::before</code> y <code>::after</code> añaden contenido sin tocar el
@@ -747,7 +732,7 @@ url(https://.../foto.jpg)       <span>no: una skin no habla con internet</span><
   color: #ffd166;
 }</code></pre>
 
-  <h3>Cosas que también funcionan</h3>
+  <h3 id="cosas-que-tambien-funcionan">Cosas que también funcionan</h3>
 
   <ul>
     <li>
@@ -791,7 +776,7 @@ url(https://.../foto.jpg)       <span>no: una skin no habla con internet</span><
     de noche un papel claro hace daño a la vista.
   </p>
 
-  <h3>1. La carpeta y el manifiesto</h3>
+  <h3 id="la-carpeta-y-el-manifiesto">1. La carpeta y el manifiesto</h3>
 
   <p>
     Copia una skin que te guste, bórrala por dentro y renómbrala
@@ -804,7 +789,7 @@ url(https://.../foto.jpg)       <span>no: una skin no habla con internet</span><
 version="1.0.0"
 author="tu nombre"</code></pre>
 
-  <h3>2. Elegir los colores antes de escribir nada</h3>
+  <h3 id="elegir-los-colores-antes-de-escribir-nada">2. Elegir los colores antes de escribir nada</h3>
 
   <p>
     Este es el paso que más se salta la gente y el que más resultados da. Una
@@ -855,7 +840,7 @@ author="tu nombre"</code></pre>
     </tbody>
   </table>
 
-  <h3>3. Los seis archivos</h3>
+  <h3 id="los-seis-archivos">3. Los seis archivos</h3>
 
   <p>
     Con los colores ya decididos, cada archivo es corto. Fíjate en que casi todo
@@ -941,7 +926,7 @@ border="1px solid rgba(59,47,42,0.12)"
 radius="8px"
 accent="#9a5b2c"</code></pre>
 
-  <h3>4. Activarla y mirarla</h3>
+  <h3 id="activarla-y-mirarla">4. Activarla y mirarla</h3>
 
   <p>
     Pon <code>skinPath="sepia"</code> en <code>skins/config.txt</code> y mira.
@@ -957,7 +942,7 @@ accent="#9a5b2c"</code></pre>
     Xenner recarga solo: el bucle de probar es el trabajo.
   </p>
 
-  <h3>5. La variante de noche</h3>
+  <h3 id="la-variante-de-noche">5. La variante de noche</h3>
 
   <p>
     Con lo hecho hasta ahora, la skin es de papel claro siempre. De noche eso es
@@ -1010,7 +995,7 @@ accent="#9a5b2c"</code></pre>
     queda como documentación de la skin y el CSS manda.
   </p>
 
-  <h3>6. Un detalle: la tipografía de la nota</h3>
+  <h3 id="un-detalle-la-tipografia-de-la-nota">6. Un detalle: la tipografía de la nota</h3>
 
   <p>
     Con una skin de papel, el texto de la nota es lo que más se nota. Con
@@ -1038,7 +1023,7 @@ accent="#9a5b2c"</code></pre>
     verás aquí es «no se ve el cambio», no «se ha roto».
   </p>
 
-  <h3>La skin no aparece en la lista</h3>
+  <h3 id="la-skin-no-aparece-en-la-lista">La skin no aparece en la lista</h3>
 
   <table>
     <thead>
@@ -1067,7 +1052,7 @@ accent="#9a5b2c"</code></pre>
     </tbody>
   </table>
 
-  <h3>Cambié un color y no pasa nada</h3>
+  <h3 id="cambie-un-color-y-no-pasa-nada">Cambié un color y no pasa nada</h3>
 
   <ul>
     <li>
@@ -1104,7 +1089,7 @@ accent="#9a5b2c"</code></pre>
     </p>
   </div>
 
-  <h3>Una imagen no se ve</h3>
+  <h3 id="una-imagen-no-se-ve">Una imagen no se ve</h3>
 
   <ul>
     <li>
@@ -1135,7 +1120,7 @@ accent="#9a5b2c"</code></pre>
     ventana. Para el fondo de la ventana es <code>background.txt</code>.
   </p>
 
-  <h3>El texto no se lee</h3>
+  <h3 id="el-texto-no-se-lee">El texto no se lee</h3>
 
   <p>
     Es el problema de una paleta demasiado apagada, y tiene arreglo rápido: sube
@@ -1151,7 +1136,7 @@ accent="#9a5b2c"</code></pre>
     en los dos. Eso se arregla con las variantes de <a href="#css">custom.css</a>.
   </p>
 
-  <h3>Se aplica a medias</h3>
+  <h3 id="se-aplica-a-medias">Se aplica a medias</h3>
 
   <p>
     Un color en un sitio y no en otro, normalmente es que hay dos capas. Si has
@@ -1162,7 +1147,7 @@ accent="#9a5b2c"</code></pre>
     lista.
   </p>
 
-  <h3>La ventana se ve rara o se descuadra</h3>
+  <h3 id="la-ventana-se-ve-rara-o-se-descuadra">La ventana se ve rara o se descuadra</h3>
 
   <p>
     Casi siempre es un <code>custom.css</code> con una regla que estira algo más
@@ -1180,7 +1165,7 @@ accent="#9a5b2c"</code></pre>
     fábrica sin borrar nada.
   </p>
 
-  <h3>El texto de la nota no cambia de aspecto</h3>
+  <h3 id="el-texto-de-la-nota-no-cambia-de-aspecto">El texto de la nota no cambia de aspecto</h3>
 
   <p>
     Los <code>.txt</code> no llegan al contenido de la nota. Los títulos, las
@@ -1189,7 +1174,7 @@ accent="#9a5b2c"</code></pre>
     todo con CSS</a>.
   </p>
 
-  <h3>Y si nada de esto es</h3>
+  <h3 id="y-si-nada-de-esto-es">Y si nada de esto es</h3>
 
   <p>
     Entonces probablemente el problema sea de permisos: la carpeta está en un
@@ -1232,7 +1217,7 @@ accent="#9a5b2c"</code></pre>
     </li>
   </ul>
 
-  <h3>Para compartirla</h3>
+  <h3 id="para-compartirla">Para compartirla</h3>
 
   <p>
     Una skin es una carpeta. Se copia, se comprime y se pasa a quien quieras.
@@ -1257,7 +1242,7 @@ accent="#9a5b2c"</code></pre>
     </p>
   </div>
 
-  <h3>Skins de ejemplo para copiar</h3>
+  <h3 id="skins-de-ejemplo-para-copiar">Skins de ejemplo para copiar</h3>
 
   <p>
     Vienen cuatro, y están escritas para que se copien.
@@ -1268,4 +1253,4 @@ accent="#9a5b2c"</code></pre>
     Las cuatro están comentadas línea a línea, que es la mejor forma de aprender
     qué se puede hacer.
   </p>
-</GuideLayout>
+</DocsLayout>
