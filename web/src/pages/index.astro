@@ -211,8 +211,9 @@ const PIZARRA = [
             Se parece a cómo escribes.
           </h2>
           <p class="head__lead">
-            Tipografía a elegir, tema claro u oscuro, y la opción de crear el tuyo con
-            una paleta y un nombre. Los cambios se aplican al instante.
+            Tipografía a elegir, tema claro u oscuro, y skins que son una carpeta
+            de archivos tuyos: colores, imágenes, iconos propios y un archivo de
+            CSS. Se cambian al instante y no hay que compilar nada.
           </p>
         </header>
 
@@ -229,10 +230,19 @@ const PIZARRA = [
           </li>
           <li class="look__item">
             <span class="look__chip look__chip--hash" aria-hidden="true">#</span>
-            <b>Temas propios</b>
-            <span>Crea el tuyo con una paleta y un nombre.</span>
+            <b>Skins propias</b>
+            <span>Con tus imágenes, tus iconos y tu CSS.</span>
           </li>
         </ul>
+
+        <p class="look__more">
+          <a class="arrow" href="/doc/">
+            Cómo se hace una skin
+            <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 8h10M9 4l4 4-4 4" />
+            </svg>
+          </a>
+        </p>
       </div>
     </section>
 
@@ -550,6 +560,10 @@ const PIZARRA = [
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
+  }
+
+  .look__more {
+    margin-top: 1.75rem;
   }
 
   .look__item {
