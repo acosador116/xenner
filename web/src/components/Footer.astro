@@ -1,8 +1,11 @@
 ---
 import Brand from './Brand.astro';
+import { GUIDE } from '../data/guide';
+import { REPO } from '../config';
 
-const repo = 'https://github.com/acosador116/xenner';
 const year = new Date().getFullYear();
+/* La página actual no se enlaza a sí misma en el pie. */
+const elsewhere = GUIDE.filter((page) => page.path !== Astro.url.pathname);
 ---
 
 <footer class="foot">
@@ -15,15 +18,20 @@ const year = new Date().getFullYear();
 
       <nav class="foot__col" aria-label="Producto">
         <h2>Producto</h2>
-        <a href="#editor">El editor</a>
-        <a href="#organize">Carpetas</a>
-        <a href="#look">Apariencia</a>
+        <a href="/#editor">El editor</a>
+        <a href="/#organize">Carpetas</a>
+        <a href="/#look">Apariencia</a>
+      </nav>
+
+      <nav class="foot__col" aria-label="Guía">
+        <h2>Guía</h2>
+        {elsewhere.map((page) => <a href={page.path}>{page.label}</a>)}
       </nav>
 
       <nav class="foot__col" aria-label="Proyecto">
         <h2>Proyecto</h2>
-        <a href={repo} target="_blank" rel="noreferrer">GitHub ↗</a>
-        <a href={`${repo}#readme`} target="_blank" rel="noreferrer">Cómo se ejecuta ↗</a>
+        <a href={REPO} target="_blank" rel="noreferrer">GitHub ↗</a>
+        <a href="/instalar/">Cómo se ejecuta ↗</a>
       </nav>
     </div>
 
@@ -43,7 +51,7 @@ const year = new Date().getFullYear();
 
   .foot__top {
     display: grid;
-    grid-template-columns: 1.8fr 1fr 1fr;
+    grid-template-columns: 1.8fr 1fr 1fr 1fr;
     gap: clamp(1.75rem, 5vw, 3.5rem);
   }
 
@@ -92,6 +100,12 @@ const year = new Date().getFullYear();
     border-top: 1px solid var(--line);
     color: var(--ink-3);
     font-size: var(--t-xs);
+  }
+
+  @media (max-width: 980px) {
+    .foot__top {
+      grid-template-columns: 1fr 1fr;
+    }
   }
 
   @media (max-width: 720px) {

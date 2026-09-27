@@ -1,0 +1,43 @@
+---
+import GuideLayout from '../layouts/GuideLayout.astro';
+
+const path = '/editor-de-notas/';
+---
+
+<GuideLayout
+  path={path}
+  eyebrow="Guía"
+  title="Creador de notas para el ordenador, con Markdown"
+  heading="Un creador de notas normal"
+  lead="Xenner es un creador de notas que guarda cada nota como un archivo Markdown en la carpeta que elijas."
+  description="Xenner es un creador de notas para el ordenador: escribes en un editor visual y cada nota se guarda como un archivo Markdown en tu carpeta."
+>
+  <p>
+    Abres Xenner, eliges una carpeta y escribes. No hay cuenta, no hay nube y
+    no hay base de datos: las notas son archivos tuyos.
+  </p>
+
+  <h2>Cómo se usa</h2>
+  <p>
+    A la izquierda está el explorador de archivos. Creas una nota, le escribes y
+    se guarda solo. El título de la nota es su nombre de archivo, así que
+    siempre sabes qué tienes delante.
+  </p>
+  <p>
+    Escribes en un editor visual, pero lo que se guarda es Markdown. No hace
+    falta escribir los símbolos a mano.
+  </p>
+
+  <h2>Si la abres con otro programa</h2>
+  <p>
+    Como son archivos de texto, puedes abrirlos con cualquier editor y
+    modificarlos. Xenner detecta los cambios que hagas por fuera.
+  </p>
+
+  <h2>Gratis y de código abierto</h2>
+  <p>
+    No hay nada que pagar ni a lo que suscribirse. Todo el código está en
+    <a href="https://github.com/xenoxf/xenner" target="_blank" rel="noreferrer">GitHub</a>
+    con licencia MIT.
+  </p>
+</GuideLayout>

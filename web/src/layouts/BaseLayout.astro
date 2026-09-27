@@ -1,4 +1,5 @@
 ---
+import { REPO, SITE_NAME } from '../config';
 import '../styles/global.css';
 
 interface Props {
@@ -6,19 +7,27 @@ interface Props {
   description?: string;
   image?: string;
   noindex?: boolean;
+  /** Token de Search Console. Por defecto, el ya verificado en el repo. */
+  googleVerification?: string;
 }
 
 const {
   title,
-  description = 'Xenner es un editor de notas de escritorio que trabaja sobre una carpeta de Markdown. Pizarra, temas propios e historial de cambios. Sin cuentas, sin nube y sin telemetría.',
+  description = 'Xenner es un creador de notas para el ordenador. Tus notas son archivos Markdown en tu carpeta. Gratis, de código abierto y con el aspecto en archivos de texto.',
   image = '/og-xenner.png',
   noindex = false,
+  googleVerification =
+    import.meta.env.PUBLIC_GOOGLE_SITE_VERIFICATION ??
+    'fa6zFON181emDwrvIUEtbd_oiy5bwslWzIokdl-_An4',
 } = Astro.props;
 
-const pageTitle = title ?? `Xenner` ;
+/* El título por defecto lleva la palabra que se busca ("creador de notas") y
+   se queda en 55 caracteres, dentro del rango que Google no recorta. */
+const pageTitle = title ?? 'Xenner — creador de notas gratis y de código abierto';
 const siteURL = Astro.site ? new URL('/', Astro.site) : new URL('/', Astro.url);
 const canonicalURL = Astro.site ? new URL(Astro.url.pathname, Astro.site) : Astro.url;
 const socialImageURL = new URL(image, siteURL);
+const repo = REPO;
 
 const structuredData = {
   '@context': 'https://schema.org',
@@ -27,20 +36,40 @@ const structuredData = {
       '@type': 'WebSite',
       '@id': `${siteURL.href}#website`,
       url: siteURL.href,
-      name: 'xenner',
+      name: SITE_NAME,
+      description,
       inLanguage: 'es',
+      publisher: { '@id': `${siteURL.href}#app` },
+    },
+    {
+      '@type': 'WebPage',
+      '@id': `${canonicalURL.href}#webpage`,
+      url: canonicalURL.href,
+      name: pageTitle,
+      description,
+      inLanguage: 'es',
+      isPartOf: { '@id': `${siteURL.href}#website` },
+      about: { '@id': `${siteURL.href}#app` },
     },
     {
       '@type': 'SoftwareApplication',
       '@id': `${siteURL.href}#app`,
-      name: 'xenner',
+      name: 'Xenner',
       description,
       softwareVersion: '0.1.0',
       applicationCategory: 'UtilitiesApplication',
+      operatingSystem: 'Windows, macOS, Linux',
+      softwareRequirements: 'Node 22.12 o superior, pnpm y Rust estable (para compilar desde el código)',
       isAccessibleForFree: true,
       license: 'https://opensource.org/license/mit',
-      codeRepository: 'https://github.com/acosador116/xenner',
-      sameAs: ['https://github.com/acosador116/xenner'],
+      codeRepository: repo,
+      sameAs: [repo],
+      keywords: ['creador de notas', 'editor de notas', 'notas Markdown'],
+      featureList: [
+        'Editor visual que guarda Markdown',
+        'La interfaz son archivos de texto',
+        'Sin cuentas, sin nube y de código abierto',
+      ],
       image: {
         '@type': 'ImageObject',
         url: socialImageURL.href,
@@ -52,6 +81,7 @@ const structuredData = {
       offers: {
         '@type': 'Offer',
         price: 0,
+        priceCurrency: 'EUR',
       },
     },
   ],
@@ -70,6 +100,8 @@ const structuredData = {
          sobre una página clara. -->
     <meta name="theme-color" content="#fbfaf8" />
     <meta name="color-scheme" content="light" />
+    <meta name="application-name" content="Xenner" />
+    <meta name="apple-mobile-web-app-title" content="Xenner" />
     {noindex ? (
       <meta name="robots" content="noindex, nofollow" />
     ) : (
@@ -80,10 +112,15 @@ const structuredData = {
     <link rel="manifest" href="/site.webmanifest" />
     {Astro.site && <link rel="sitemap" href="/sitemap-index.xml" />}
 
+    <!-- Verificación de propiedad en Search Console. Google pide que el valor
+         coincida carácter a carácter; se puede sobreescribir con
+         PUBLIC_GOOGLE_SITE_VERIFICATION sin tocar el código. -->
+    <meta name="google-site-verification" content={googleVerification} />
+
     <link rel="canonical" href={canonicalURL} />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="es_ES" />
-    <meta property="og:site_name" content="xenner" />
+    <meta property="og:site_name" content="Xenner" />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalURL} />

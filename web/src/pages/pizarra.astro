@@ -1,0 +1,32 @@
+---
+import GuideLayout from '../layouts/GuideLayout.astro';
+
+const path = '/pizarra/';
+---
+
+<GuideLayout
+  path={path}
+  eyebrow="Guía"
+  title="Pizarra: dibujar dentro de la nota de Xenner"
+  heading="También se puede dibujar"
+  lead="Se dibuja dentro de la nota y se guarda como una imagen al lado del archivo."
+  description="La pizarra de Xenner dibuja dentro de la propia nota: doble clic para dibujar y el dibujo se guarda como una imagen junto al archivo Markdown."
+>
+  <p>
+    Si una nota necesita un croquis, haces doble clic y dibuja sobre el papel:
+    lápiz, formas, flechas y texto. Lo que se guarda es una imagen junto al
+    archivo, no un documento aparte.
+  </p>
+
+  <h2>La nota sigue siendo la misma</h2>
+  <p>
+    El dibujo queda al lado del Markdown. Quien abra la nota en otro programa ve
+    la imagen y lee el texto igual.
+  </p>
+
+  <h2>Se puede deshacer</h2>
+  <p>
+    Como en el resto del editor, cualquier trazo se puede volver atrás. Puedes
+    probar sin miedo.
+  </p>
+</GuideLayout>

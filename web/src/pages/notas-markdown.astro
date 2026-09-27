@@ -1,0 +1,38 @@
+---
+import GuideLayout from '../layouts/GuideLayout.astro';
+
+const path = '/notas-markdown/';
+---
+
+<GuideLayout
+  path={path}
+  eyebrow="Guía"
+  title="Notas en Markdown, sin formato propietario"
+  heading="Tus notas son texto"
+  lead="Cada nota es un archivo Markdown en tu carpeta. Puedes abrirlo con cualquier programa."
+  description="Las notas de Xenner son archivos Markdown en tu carpeta: se abren y se editan con el Bloc de notas o con cualquier editor, sin programa propietario."
+>
+  <p>
+    Markdown es texto con unos pocos símbolos para dar formato. Eso es todo: un
+    archivo Markdown se abre con el Bloc de notas de Windows, con un editor de
+    código o con un visor, y siempre se ve.
+  </p>
+  <p>
+    En Xenner no escribes esos símbolos: el editor los pone por ti. Lo que ves
+    formateado y lo que hay en el disco son lo mismo.
+  </p>
+
+  <h2>Por qué importa</h2>
+  <p>
+    Un archivo de texto no se estropea. Si algo no encaja, lo abres en el Bloc
+    de notas, lo corriges y sigues. Y dentro de diez años, cuando el programa
+    que usas hoy ya no exista, tus notas seguirán ahí.
+  </p>
+
+  <h2>Nada se esconde dentro</h2>
+  <p>
+    Xenner no tiene un formato propio. Si mañana usas otro editor, tus notas
+    funcionan igual. Está en <a href="/alternativa-notion/">tus notas en tu
+    ordenador</a>.
+  </p>
+</GuideLayout>

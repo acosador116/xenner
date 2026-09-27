@@ -1,0 +1,61 @@
+---
+import GuideLayout from '../layouts/GuideLayout.astro';
+import { REPO } from '../config';
+
+const path = '/instalar/';
+const readme = `${REPO}#readme`;
+---
+
+<GuideLayout
+  path={path}
+  eyebrow="Guía"
+  title="Cómo se ejecuta Xenner: requisitos y comandos"
+  heading="Cómo se ejecuta"
+  lead="Xenner se levanta desde el código. No hay instalador publicado todavía."
+  description="Cómo ejecutar Xenner desde el código: Node 22.12 o superior, pnpm, Rust estable y las librerías de sistema que pida Tauri 2 en tu plataforma."
+>
+  <p>
+    El proyecto está en
+    <a href={REPO} target="_blank" rel="noreferrer">GitHub</a>. Se ejecuta como
+    cualquier proyecto de Node con un backend en Rust.
+  </p>
+
+  <h2>Qué hace falta</h2>
+  <ul>
+    <li>Node 22.12 o superior.</li>
+    <li>pnpm.</li>
+    <li>Rust estable, para la aplicación de escritorio.</li>
+    <li>Las librerías de sistema que pida Tauri 2 en tu plataforma, están en la
+      <a href="https://v2.tauri.app/start/prerequisites/" target="_blank" rel="noreferrer">documentación de Tauri</a>.</li>
+  </ul>
+
+  <h2>Levantar la aplicación</h2>
+  <pre><code>git clone {REPO}.git
+cd xenner
+pnpm install
+pnpm tauri dev</code></pre>
+  <p>
+    Si solo quieres trabajar en la interfaz, <code>pnpm dev</code> la sirve en
+    <code>http://localhost:1420</code> sin abrir la ventana.
+  </p>
+
+  <h2>Comprobarlo</h2>
+  <pre><code>pnpm build
+cd src-tauri
+cargo check</code></pre>
+  <p>
+    <code>pnpm build</code> incluye los tests y el chequeo de tipos.
+  </p>
+
+  <h2>Generar el instalador</h2>
+  <p>
+    <code>pnpm tauri build</code> compila la aplicación y deja el instalador en
+    la carpeta que configure Tauri.
+  </p>
+
+  <h2>Y la web de este sitio</h2>
+  <pre><code>cd web
+pnpm install
+pnpm dev</code></pre>
+  <p>Su <a href={readme} target="_blank" rel="noreferrer">README</a> explica el resto.</p>
+</GuideLayout>

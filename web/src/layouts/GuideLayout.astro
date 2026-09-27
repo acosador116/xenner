@@ -1,0 +1,195 @@
+---
+import { GUIDE } from '../data/guide';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import BaseLayout from './BaseLayout.astro';
+
+/**
+ * Envoltura de las páginas de la guía: cabecera, artículo y pie, más el bloque
+ * de "otras páginas" que las enlaza entre sí.
+ *
+ * Cada página declara su title y su meta description propios, porque compiten
+ * por búsquedas distintas. Un title único por URL es la señal más básica de
+ * Search Console: si dos páginas compiten por el mismo título, una gana y la
+ * otra desaparece.
+ */
+interface Props {
+  /** Title del <head>: la frase que se busca, 50-60 caracteres. */
+  title: string;
+  /** Meta description, 140-160 caracteres. */
+  description: string;
+  /** Antetítulo en versalitas, sobre el h1. */
+  eyebrow: string;
+  /** h1 visible: lo que lee la persona, no lo que se indexa. */
+  heading: string;
+  /** Frase bajo el h1. */
+  lead: string;
+  /** Ruta de esta misma página, para que "otras páginas" la omita. */
+  path: string;
+  /** Snippet de Open Graph si la página necesita el suyo. */
+  image?: string;
+}
+
+const { title, description, eyebrow, heading, lead, path, image } = Astro.props;
+
+const otras = GUIDE.filter((page) => page.path !== path);
+---
+
+<BaseLayout title={title} description={description} image={image}>
+  <Header />
+
+  <main class="page" id="contenido">
+    <div class="shell page__inner">
+      <nav class="crumbs" aria-label="Ruta de la guía">
+        <a href="/">Inicio</a>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">{eyebrow}</span>
+      </nav>
+
+      <header class="page__head">
+        <p class="label">{eyebrow}</p>
+        <h1 class="page__title">{heading}</h1>
+        <p class="page__lead">{lead}</p>
+      </header>
+
+      <div class="prose">
+        <slot />
+      </div>
+
+      <nav class="otras" aria-labelledby="otras-title">
+        <h2 class="otras__title" id="otras-title">Otras páginas de la guía</h2>
+        <ul class="otras__list">
+          {
+            otras.map((page) => (
+              <li class="otras__item">
+                <a class="otras__link" href={page.path}>
+                  <b>{page.label}</b>
+                  <span>{page.summary}</span>
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+    </div>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  .page {
+    padding: clamp(2.5rem, 6vw, 4.5rem) 0 var(--air);
+  }
+
+  .page__inner {
+    max-width: calc(var(--wide) - 8rem);
+  }
+
+  .crumbs {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--ink-3);
+    font-size: var(--t-xs);
+  }
+
+  .crumbs a {
+    color: var(--ink-3);
+    text-decoration: none;
+  }
+
+  .crumbs a:hover {
+    color: var(--accent-ink);
+  }
+
+  .page__head {
+    max-width: 42rem;
+    margin-top: 1.75rem;
+  }
+
+  .page__title {
+    margin-top: 1.1rem;
+    font-family: var(--serif);
+    font-size: clamp(2.25rem, 5.6vw, 3.5rem);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    text-wrap: balance;
+  }
+
+  .page__lead {
+    margin-top: 1.35rem;
+    color: var(--ink-2);
+    font-size: var(--t-lg);
+    line-height: 1.55;
+    text-wrap: pretty;
+  }
+
+  /* La prosa se mide para lectura; el bloque de enlaces, no. */
+  .page__inner :global(.prose) {
+    margin-top: clamp(2.5rem, 5vw, 3.5rem);
+  }
+
+  .otras {
+    margin-top: clamp(3.5rem, 8vw, 5.5rem);
+    padding-top: clamp(2rem, 4vw, 2.75rem);
+    border-top: 1px solid var(--line);
+  }
+
+  .otras__title {
+    color: var(--ink-3);
+    font-size: var(--t-xs);
+    font-weight: 600;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+  }
+
+  .otras__list {
+    margin-top: 1.5rem;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--line);
+    overflow: hidden;
+  }
+
+  .otras__item {
+    background: var(--bg);
+  }
+
+  .otras__link {
+    height: 100%;
+    padding: 1.15rem 1.25rem;
+    display: grid;
+    gap: 0.35rem;
+    color: inherit;
+    text-decoration: none;
+    transition: background-color var(--t-fast) var(--ease);
+  }
+
+  .otras__link:hover {
+    background: var(--sunken);
+  }
+
+  .otras__link b {
+    color: var(--ink);
+    font-size: var(--t-base);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+
+  .otras__link span {
+    color: var(--ink-2);
+    font-size: var(--t-sm);
+    line-height: 1.6;
+  }
+
+  @media (max-width: 720px) {
+    .otras__list {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
